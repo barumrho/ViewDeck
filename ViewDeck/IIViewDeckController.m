@@ -244,8 +244,8 @@
 - (void)loadView
 {
     _viewAppeared = NO;
-    self.view = [[UIView alloc] init];
-    self.centerView = [[UIView alloc] init];
+    self.view = [[UIView alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
+    self.centerView = [[UIView alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
     [self.view addSubview:self.centerView];
 
     self.originalShadowRadius = 0;
