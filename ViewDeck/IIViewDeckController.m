@@ -115,7 +115,6 @@
 - (id)initWithCenterViewController:(UIViewController*)centerController {
     if ((self = [super init])) {
         self.centerController = centerController;
-        [self.centerController setViewDeckController:self];
         _slidingController = nil;
         self.leftController = nil;
         self.rightController = nil;
@@ -138,7 +137,6 @@
 - (id)initWithCenterViewController:(UIViewController*)centerController leftViewController:(UIViewController*)leftController {
     if ((self = [self initWithCenterViewController:centerController])) {
         self.leftController = leftController;
-        [self.leftController setViewDeckController:self];
     }
     return self;
 }
@@ -146,7 +144,6 @@
 - (id)initWithCenterViewController:(UIViewController*)centerController rightViewController:(UIViewController*)rightController {
     if ((self = [self initWithCenterViewController:centerController])) {
         self.rightController = rightController;
-        [self.rightController setViewDeckController:self];
     }
     return self;
 }
@@ -154,10 +151,7 @@
 - (id)initWithCenterViewController:(UIViewController*)centerController leftViewController:(UIViewController*)leftController rightViewController:(UIViewController*)rightController {
     if ((self = [self initWithCenterViewController:centerController])) {
         self.leftController = leftController;
-        [self.leftController setViewDeckController:self];
-
         self.rightController = rightController;
-        [self.rightController setViewDeckController:self];
     }
     return self;
 }
@@ -809,6 +803,7 @@
 }
 
 - (void)setLeftController:(UIViewController *)leftController {
+    [leftController setViewDeckController:self];
     if (!_viewAppeared) {
         _leftController = leftController;
         return;
@@ -837,6 +832,7 @@
 }
 
 - (void)setCenterController:(UIViewController *)centerController {
+    [centerController setViewDeckController:self];
     if (!_viewAppeared) {
         _centerController = centerController;
         return;
@@ -887,6 +883,7 @@
 }
 
 - (void)setRightController:(UIViewController *)rightController {
+    [rightController setViewDeckController:self];
     if (!_viewAppeared) {
         _rightController = rightController;
         return;
