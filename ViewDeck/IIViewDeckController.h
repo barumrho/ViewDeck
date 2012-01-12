@@ -54,6 +54,9 @@ typedef enum {
 
 
 @interface IIViewDeckController : UIViewController
+{
+    BOOL _animating;
+}
 
 @property (nonatomic, retain) id<IIViewDeckControllerDelegate> delegate;
 @property (nonatomic, retain) UIViewController* centerController;

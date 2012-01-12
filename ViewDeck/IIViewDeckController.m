@@ -413,6 +413,7 @@
 }
 
 - (void)toggleLeftView {
+    if (_animating) return;
     [self toggleLeftViewAnimated:YES];
 }
 
@@ -453,10 +454,12 @@
     if (![self closeRightViewAnimated:animated options:options completion:completed]) return;
     
     [UIView animateWithDuration:OPEN_SLIDE_DURATION(animated) delay:0 options:options | UIViewAnimationOptionLayoutSubviews | UIViewAnimationOptionBeginFromCurrentState animations:^{
+        _animating = YES;
         self.leftController.view.hidden = NO;
         self.slidingControllerView.frame = [self slidingRectForOffset:self.referenceBounds.size.width - self.leftLedge];
         [self centerViewHidden];
     } completion:^(BOOL finished) {
+        _animating = NO;
         if (completed) completed(self);
         [self performDelegate:@selector(viewDeckControllerDidOpenLeftView:animated:) animated:animated];
     }];
@@ -477,9 +480,11 @@
     if (![self checkDelegate:@selector(viewDeckControllerWillCloseLeftView:animated:) animated:animated]) return NO;
 
     [UIView animateWithDuration:CLOSE_SLIDE_DURATION(animated) delay:0 options:options | UIViewAnimationOptionLayoutSubviews animations:^{
+        _animating = YES;
         self.slidingControllerView.frame = [self slidingRectForOffset:0];
         [self centerViewVisible];
     } completion:^(BOOL finished) {
+        _animating = NO;
         self.leftController.view.hidden = YES;
         if (completed) completed(self);
         [self performDelegate:@selector(viewDeckControllerDidCloseLeftView:animated:) animated:animated];
@@ -501,6 +506,7 @@
     
     // first open the view completely, run the block (to allow changes) and close it again.
     [UIView animateWithDuration:OPEN_SLIDE_DURATION(YES) delay:0 options:UIViewAnimationOptionCurveEaseIn | UIViewAnimationOptionLayoutSubviews animations:^{
+        _animating = YES;
         self.slidingControllerView.frame = [self slidingRectForOffset:self.referenceBounds.size.width];
     } completion:^(BOOL finished) {
         // run block if it's defined
@@ -512,6 +518,7 @@
             self.slidingControllerView.frame = [self slidingRectForOffset:0];
             [self centerViewVisible];
         } completion:^(BOOL finished) {
+            _animating = NO;
             self.leftController.view.hidden = YES;
             if (completed) completed(self);
             [self performDelegate:@selector(viewDeckControllerDidCloseLeftView:animated:) animated:YES];
@@ -522,6 +529,7 @@
 
 
 - (void)toggleRightView {
+    if (_animating) return;
     [self toggleRightViewAnimated:YES];
 }
 
@@ -561,10 +569,12 @@
     if (![self closeLeftViewAnimated:animated options:options completion:completed]) return;
     
     [UIView animateWithDuration:OPEN_SLIDE_DURATION(animated) delay:0 options:options | UIViewAnimationOptionLayoutSubviews animations:^{
+        _animating = YES;
         self.rightController.view.hidden = NO;
         self.slidingControllerView.frame = [self slidingRectForOffset:self.rightLedge - self.referenceBounds.size.width];
         [self centerViewHidden];
     } completion:^(BOOL finished) {
+        _animating = NO;
         if (completed) completed(self);
         [self performDelegate:@selector(viewDeckControllerDidOpenRightView:animated:) animated:animated];
     }];
@@ -585,8 +595,10 @@
     if (![self checkDelegate:@selector(viewDeckControllerWillCloseRightView:animated:) animated:animated]) return NO;
     
     [UIView animateWithDuration:CLOSE_SLIDE_DURATION(animated) delay:0 options:options | UIViewAnimationOptionLayoutSubviews animations:^{
+        _animating = YES;
         self.slidingControllerView.frame = [self slidingRectForOffset:0];
     } completion:^(BOOL finished) {
+        _animating = NO;
         if (completed) completed(self);
         self.rightController.view.hidden = YES;
         [self performDelegate:@selector(viewDeckControllerDidCloseRightView:animated:) animated:animated];
@@ -607,6 +619,7 @@
     if (![self checkDelegate:@selector(viewDeckControllerWillCloseRightView:animated:) animated:YES]) return;
     
     [UIView animateWithDuration:OPEN_SLIDE_DURATION(YES) delay:0 options:UIViewAnimationOptionCurveEaseIn | UIViewAnimationOptionLayoutSubviews animations:^{
+        _animating = YES;
         self.slidingControllerView.frame = [self slidingRectForOffset:-self.referenceBounds.size.width];
     } completion:^(BOOL finished) {
         if (bounced)  bounced(self);
@@ -617,6 +630,7 @@
             self.slidingControllerView.frame = [self slidingRectForOffset:0];
             [self centerViewVisible];
         } completion:^(BOOL finished) {
+            _animating = NO;
             self.rightController.view.hidden = YES;
             if (completed) completed(self);
             [self performDelegate:@selector(viewDeckControllerDidCloseRightView:animated:) animated:YES];
