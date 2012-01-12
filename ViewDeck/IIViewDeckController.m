@@ -708,7 +708,6 @@
     x = MIN(x, self.referenceBounds.size.width-self.leftLedge);
     self.slidingControllerView.frame = [self slidingRectForOffset:x];
 
-    NSLog(@"X %f", x);
     BOOL rightWasHidden = self.rightController.view.hidden;
     BOOL leftWasHidden = self.leftController.view.hidden;
 
@@ -718,14 +717,9 @@
     if ([self.delegate respondsToSelector:@selector(viewDeckController:didPanToOffset:)])
         [self.delegate viewDeckController:self didPanToOffset:x];
 
-    NSLog(@"left %d => %d", leftWasHidden, self.leftController.view.hidden);
-    NSLog(@"right %d => %d", rightWasHidden, self.rightController.view.hidden);
     if ((self.leftController.view.hidden && !leftWasHidden) || (self.rightController.view.hidden && !rightWasHidden)) {
-        NSLog(@"visible");
         [self centerViewVisible];
-    }
-    else if (leftWasHidden && rightWasHidden && (!self.leftController.view.hidden || !self.leftController.view.hidden)) {
-        NSLog(@"hidden");
+    } else if (leftWasHidden && rightWasHidden && (!self.leftController.view.hidden || !self.leftController.view.hidden)) {
         [self centerViewHidden];
     }
 
