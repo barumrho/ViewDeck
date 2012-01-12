@@ -276,13 +276,6 @@
     
     [self setSlidingAndReferenceViews];
     
-    BOOL sendMessagesToChildren = ![self respondsToSelector:@selector(automaticallyForwardAppearanceAndRotationMethodsToChildViewControllers:)];
-
-    if (sendMessagesToChildren) {
-        [self.centerController viewWillAppear:animated];
-        [self.leftController viewWillAppear:animated];
-        [self.rightController viewWillAppear:animated];
-    }
     [self.centerController.view removeFromSuperview];
     [self.centerView addSubview:self.centerController.view];
     [self.leftController.view removeFromSuperview];
@@ -300,6 +293,10 @@
 
     [self applyShadowToSlidingView];
 
+    BOOL sendMessagesToChildren = ![self respondsToSelector:@selector(automaticallyForwardAppearanceAndRotationMethodsToChildViewControllers:)];
+    if (sendMessagesToChildren) {
+        [self.centerController viewWillAppear:animated];
+    }
     _viewAppeared = YES;
     
     [self addPanners];
@@ -316,8 +313,6 @@
     BOOL sendMessagesToChildren = ![self respondsToSelector:@selector(automaticallyForwardAppearanceAndRotationMethodsToChildViewControllers:)];
     if (sendMessagesToChildren) {
         [self.centerController viewDidAppear:animated];
-        [self.leftController viewDidAppear:animated];
-        [self.rightController viewDidAppear:animated];
     }
 }
 
@@ -327,8 +322,6 @@
     BOOL sendMessagesToChildren = ![self respondsToSelector:@selector(automaticallyForwardAppearanceAndRotationMethodsToChildViewControllers:)];
     if (sendMessagesToChildren) {
         [self.centerController viewWillDisappear:animated];
-        [self.leftController viewWillDisappear:animated];
-        [self.rightController viewWillDisappear:animated];
     }
 
     [self removePanners];
@@ -349,8 +342,6 @@
     BOOL sendMessagesToChildren = ![self respondsToSelector:@selector(automaticallyForwardAppearanceAndRotationMethodsToChildViewControllers:)];
     if (sendMessagesToChildren) {
         [self.centerController viewDidDisappear:animated];
-        [self.leftController viewDidDisappear:animated];
-        [self.rightController viewDidDisappear:animated];
     }
     _viewAppeared = NO;
 }
