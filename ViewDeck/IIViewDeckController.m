@@ -276,13 +276,6 @@
     
     [self setSlidingAndReferenceViews];
     
-    BOOL sendMessagesToChildren = ![self respondsToSelector:@selector(automaticallyForwardAppearanceAndRotationMethodsToChildViewControllers:)];
-
-    if (sendMessagesToChildren) {
-        [self.centerController viewWillAppear:animated];
-        [self.leftController viewWillAppear:animated];
-        [self.rightController viewWillAppear:animated];
-    }
     [self.centerController.view removeFromSuperview];
     [self.centerView addSubview:self.centerController.view];
     [self.leftController.view removeFromSuperview];
@@ -300,6 +293,10 @@
 
     [self applyShadowToSlidingView];
 
+    BOOL sendMessagesToChildren = ![self respondsToSelector:@selector(automaticallyForwardAppearanceAndRotationMethodsToChildViewControllers:)];
+    if (sendMessagesToChildren) {
+        [self.centerController viewWillAppear:animated];
+    }
     _viewAppeared = YES;
     
     [self addPanners];
@@ -316,8 +313,6 @@
     BOOL sendMessagesToChildren = ![self respondsToSelector:@selector(automaticallyForwardAppearanceAndRotationMethodsToChildViewControllers:)];
     if (sendMessagesToChildren) {
         [self.centerController viewDidAppear:animated];
-        [self.leftController viewDidAppear:animated];
-        [self.rightController viewDidAppear:animated];
     }
 }
 
@@ -327,8 +322,6 @@
     BOOL sendMessagesToChildren = ![self respondsToSelector:@selector(automaticallyForwardAppearanceAndRotationMethodsToChildViewControllers:)];
     if (sendMessagesToChildren) {
         [self.centerController viewWillDisappear:animated];
-        [self.leftController viewWillDisappear:animated];
-        [self.rightController viewWillDisappear:animated];
     }
 
     [self removePanners];
@@ -349,8 +342,6 @@
     BOOL sendMessagesToChildren = ![self respondsToSelector:@selector(automaticallyForwardAppearanceAndRotationMethodsToChildViewControllers:)];
     if (sendMessagesToChildren) {
         [self.centerController viewDidDisappear:animated];
-        [self.leftController viewDidDisappear:animated];
-        [self.rightController viewDidDisappear:animated];
     }
     _viewAppeared = NO;
 }
@@ -708,7 +699,6 @@
     x = MIN(x, self.referenceBounds.size.width-self.leftLedge);
     self.slidingControllerView.frame = [self slidingRectForOffset:x];
 
-    NSLog(@"X %f", x);
     BOOL rightWasHidden = self.rightController.view.hidden;
     BOOL leftWasHidden = self.leftController.view.hidden;
 
@@ -718,14 +708,9 @@
     if ([self.delegate respondsToSelector:@selector(viewDeckController:didPanToOffset:)])
         [self.delegate viewDeckController:self didPanToOffset:x];
 
-    NSLog(@"left %d => %d", leftWasHidden, self.leftController.view.hidden);
-    NSLog(@"right %d => %d", rightWasHidden, self.rightController.view.hidden);
     if ((self.leftController.view.hidden && !leftWasHidden) || (self.rightController.view.hidden && !rightWasHidden)) {
-        NSLog(@"visible");
         [self centerViewVisible];
-    }
-    else if (leftWasHidden && rightWasHidden && (!self.leftController.view.hidden || !self.leftController.view.hidden)) {
-        NSLog(@"hidden");
+    } else if (leftWasHidden && rightWasHidden && (!self.leftController.view.hidden || !self.leftController.view.hidden)) {
         [self centerViewHidden];
     }
 
