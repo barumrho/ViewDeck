@@ -386,6 +386,10 @@
 - (void)didRotateFromInterfaceOrientation:(UIInterfaceOrientation)fromInterfaceOrientation {
     [super didRotateFromInterfaceOrientation:fromInterfaceOrientation];
     
+    [self.centerController didRotateFromInterfaceOrientation:fromInterfaceOrientation];
+    [self.leftController didRotateFromInterfaceOrientation:fromInterfaceOrientation];
+    [self.rightController didRotateFromInterfaceOrientation:fromInterfaceOrientation];
+    
     [self applyShadowToSlidingView];
 }
 
