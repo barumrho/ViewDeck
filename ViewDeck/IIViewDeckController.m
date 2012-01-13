@@ -276,7 +276,7 @@
     
     [self setSlidingAndReferenceViews];
     
-    BOOL sendMessagesToChildren = ![self respondsToSelector:@selector(automaticallyForwardAppearanceAndRotationMethodsToChildViewControllers:)];
+    BOOL sendMessagesToChildren = ![self respondsToSelector:@selector(automaticallyForwardAppearanceAndRotationMethodsToChildViewControllers)];
 
     if (sendMessagesToChildren) {
         [self.centerController viewWillAppear:animated];
@@ -313,7 +313,7 @@
 - (void)viewDidAppear:(BOOL)animated {
     [super viewDidAppear:animated];
     
-    BOOL sendMessagesToChildren = ![self respondsToSelector:@selector(automaticallyForwardAppearanceAndRotationMethodsToChildViewControllers:)];
+    BOOL sendMessagesToChildren = ![self respondsToSelector:@selector(automaticallyForwardAppearanceAndRotationMethodsToChildViewControllers)];
     if (sendMessagesToChildren) {
         [self.centerController viewDidAppear:animated];
         [self.leftController viewDidAppear:animated];
@@ -324,7 +324,7 @@
 - (void)viewWillDisappear:(BOOL)animated {
     [super viewWillDisappear:animated];
     
-    BOOL sendMessagesToChildren = ![self respondsToSelector:@selector(automaticallyForwardAppearanceAndRotationMethodsToChildViewControllers:)];
+    BOOL sendMessagesToChildren = ![self respondsToSelector:@selector(automaticallyForwardAppearanceAndRotationMethodsToChildViewControllers)];
     if (sendMessagesToChildren) {
         [self.centerController viewWillDisappear:animated];
         [self.leftController viewWillDisappear:animated];
@@ -346,7 +346,7 @@
     [self.leftController.view removeFromSuperview];
     [self.rightController.view removeFromSuperview];
 
-    BOOL sendMessagesToChildren = ![self respondsToSelector:@selector(automaticallyForwardAppearanceAndRotationMethodsToChildViewControllers:)];
+    BOOL sendMessagesToChildren = ![self respondsToSelector:@selector(automaticallyForwardAppearanceAndRotationMethodsToChildViewControllers)];
     if (sendMessagesToChildren) {
         [self.centerController viewDidDisappear:animated];
         [self.leftController viewDidDisappear:animated];
