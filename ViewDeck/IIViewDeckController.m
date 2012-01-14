@@ -996,7 +996,7 @@
     
     shadowedView.layer.masksToBounds = NO;
     shadowedView.layer.shadowRadius = 10;
-    shadowedView.layer.shadowOpacity = 0.5;
+    shadowedView.layer.shadowOpacity = 1;
     shadowedView.layer.shadowColor = [[UIColor blackColor] CGColor];
     shadowedView.layer.shadowOffset = CGSizeZero;
     shadowedView.layer.shadowPath = [[UIBezierPath bezierPathWithRect:self.referenceBounds] CGPath];
