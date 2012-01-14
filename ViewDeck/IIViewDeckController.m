@@ -37,7 +37,7 @@
 
 #if II_ARC_ENABLED
 #define II_RETAIN(xx)  (id)(xx)
-#define II_RELEASE(xx)  (id)(xx)
+#define II_RELEASE(xx)
 #define II_AUTORELEASE(xx)  (id)(xx)
 #else
 #define II_RETAIN(xx)           [xx retain]
@@ -182,7 +182,8 @@
 }
 
 - (void)dealloc {
-    II_RELEASE(_slidingController), _slidingController = nil;
+    II_RELEASE(_slidingController);
+    _slidingController = nil;
     self.referenceView = nil;
     self.centerController.viewDeckController = nil;
     self.centerController = nil;
