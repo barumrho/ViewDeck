@@ -49,6 +49,12 @@ typedef enum {
 } IIViewDeckNavigationControllerBehavior;
 
 
+typedef enum {
+    IIViewDeckRotationKeepsLedgeSizes, // when rotating, the ledge sizes are kept (side views are more/less visible)
+    IIViewDeckRotationKeepsViewSizes  // when rotating, the size view sizes are kept (ledges change)
+} IIViewDeckRotationBehavior;
+
+
 #define IIViewDeckCenterHiddenCanTapToClose(interactivity) ((interactivity) == IIViewDeckCenterHiddenNotUserInteractiveWithTapToClose || (interactivity) == IIViewDeckCenterHiddenNotUserInteractiveWithTapToCloseBouncing)
 #define IIViewDeckCenterHiddenIsInteractive(interactivity) ((interactivity) == IIViewDeckCenterHiddenUserInteractive)
 
@@ -71,6 +77,7 @@ typedef enum {
 @property (nonatomic) IIViewDeckPanningMode panningMode;
 @property (nonatomic) IIViewDeckCenterHiddenInteractivity centerhiddenInteractivity;
 @property (nonatomic) IIViewDeckNavigationControllerBehavior navigationControllerBehavior;
+@property (nonatomic) IIViewDeckRotationBehavior rotationBehavior;
 
 - (id)initWithCenterViewController:(UIViewController*)centerController;
 - (id)initWithCenterViewController:(UIViewController*)centerController leftViewController:(UIViewController*)leftController;
@@ -112,6 +119,7 @@ typedef enum {
 
 @protocol IIViewDeckControllerDelegate <NSObject>
 
+@optional
 - (void)viewDeckController:(IIViewDeckController*)viewDeckController didPanToOffset:(CGFloat)offset;
 - (void)viewDeckController:(IIViewDeckController *)viewDeckController didBounceWithClosingController:(UIViewController*)openController;
 - (BOOL)viewDeckControllerWillOpenLeftView:(IIViewDeckController*)viewDeckController animated:(BOOL)animated;
