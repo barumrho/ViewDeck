@@ -70,6 +70,8 @@ typedef enum {
 @property (nonatomic, retain) UIViewController* rightController;
 @property (nonatomic, readonly, retain) UIViewController* slidingController;
 @property (nonatomic, retain) UIView* panningView; 
+@property (nonatomic, readonly, retain) NSArray* controllers;
+@property (nonatomic, getter=isEnabled) BOOL enabled;
 
 @property (nonatomic) CGFloat leftLedge;
 @property (nonatomic) CGFloat rightLedge;

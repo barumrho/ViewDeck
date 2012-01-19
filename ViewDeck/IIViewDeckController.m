@@ -36,9 +36,9 @@
 #endif // __has_feature(objc_arc)
 
 #if II_ARC_ENABLED
-#define II_RETAIN(xx)  (id)(xx)
-#define II_RELEASE(xx)
-#define II_AUTORELEASE(xx)  (id)(xx)
+#define II_RETAIN(xx)  ((void)(0))
+#define II_RELEASE(xx)  ((void)(0))
+#define II_AUTORELEASE(xx)  ((void)(0))
 #else
 #define II_RETAIN(xx)           [xx retain]
 #define II_RELEASE(xx)          [xx release]
@@ -97,6 +97,8 @@
 - (BOOL)checkDelegate:(SEL)selector animated:(BOOL)animated;
 - (void)performDelegate:(SEL)selector animated:(BOOL)animated;
 
+- (void)relayAppearanceMethod:(void(^)(UIViewController* controller))relay;
+
 @end 
 
 
@@ -132,6 +134,7 @@
 @synthesize centerTapper = _centerTapper;
 @synthesize centerView = _centerView;
 @synthesize rotationBehavior = _rotationBehavior;
+@synthesize enabled = _enabled;
 
 #pragma mark - Initalisation and deallocation
 
@@ -149,6 +152,7 @@
         _rotationBehavior = IIViewDeckRotationKeepsLedgeSizes;
         _viewAppeared = NO;
         _resizesCenterView = NO;
+        self.enabled = YES;
 
         self.originalShadowRadius = 0;
         self.originalShadowOffset = CGSizeZero;
@@ -206,6 +210,13 @@
 }
 
 #pragma mark - Bookkeeping
+
+- (NSArray*)controllers {
+    NSMutableArray* result = [NSMutableArray arrayWithObject:self.centerController];
+    if (self.leftController) [result addObject:self.leftController];
+    if (self.rightController) [result addObject:self.rightController];
+    return [NSArray arrayWithArray:result];
+}
 
 - (CGRect)referenceBounds {
     return self.referenceView.bounds;
@@ -265,8 +276,17 @@
 - (void)loadView
 {
     _viewAppeared = NO;
-    self.view = II_AUTORELEASE([[UIView alloc] initWithFrame:[[UIScreen mainScreen] bounds]]);
-    self.centerView = II_AUTORELEASE([[UIView alloc] initWithFrame:[[UIScreen mainScreen] bounds]]);
+    self.view = [[UIView alloc] init];
+    II_AUTORELEASE(self.view);
+    self.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    self.view.autoresizesSubviews = YES;
+    self.view.clipsToBounds = YES;
+
+    self.centerView = [[UIView alloc] init];
+    II_AUTORELEASE(self.centerView);
+    self.centerView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    self.centerView.autoresizesSubviews = YES;
+    self.centerView.clipsToBounds = YES;
     [self.view addSubview:self.centerView];
 
     self.originalShadowRadius = 0;
@@ -274,11 +294,15 @@
     self.originalShadowColor = nil;
     self.originalShadowOffset = CGSizeZero;
     self.originalShadowPath = nil;
+    
+    [self.view addObserver:self forKeyPath:@"frame" options:NSKeyValueChangeSetting context:nil];
 }
 
 - (void)viewDidUnload
 {
     [super viewDidUnload];
+    
+    [self.view removeObserver:self forKeyPath:@"frame"];
 
     // remove center tapper
     [self centerViewVisible];
@@ -298,37 +322,36 @@
     [self.rightController.view removeFromSuperview];
 }
 
+
 - (void)viewWillAppear:(BOOL)animated {
     [super viewWillAppear:animated];
     
-    [self setSlidingAndReferenceViews];
-    
-    BOOL sendMessagesToChildren = ![self respondsToSelector:@selector(automaticallyForwardAppearanceAndRotationMethodsToChildViewControllers)];
-
-    if (sendMessagesToChildren) {
-        [self.centerController viewWillAppear:animated];
-        [self.leftController viewWillAppear:animated];
-        [self.rightController viewWillAppear:animated];
+    BOOL appeared = _viewAppeared;
+    if (!_viewAppeared) {
+        [self setSlidingAndReferenceViews];
+        
+        [self.centerController.view removeFromSuperview];
+        [self.centerView addSubview:self.centerController.view];
+        [self.leftController.view removeFromSuperview];
+        [self.referenceView insertSubview:self.leftController.view belowSubview:self.slidingControllerView];
+        [self.rightController.view removeFromSuperview];
+        [self.referenceView insertSubview:self.rightController.view belowSubview:self.slidingControllerView];
+        
+        self.centerView.frame = self.referenceBounds;
+        self.centerController.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+        self.centerController.view.frame = self.referenceBounds;
+        self.slidingControllerView.frame = self.referenceBounds;
+        self.slidingControllerView.hidden = NO;
+        self.leftController.view.frame = self.referenceBounds;
+        self.leftController.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+        self.leftController.view.hidden = YES;
+        self.rightController.view.frame = self.referenceBounds;
+        self.rightController.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+        self.rightController.view.hidden = YES;
+        
+        [self applyShadowToSlidingView];
+        _viewAppeared = YES;
     }
-    [self.centerController.view removeFromSuperview];
-    [self.centerView addSubview:self.centerController.view];
-    [self.leftController.view removeFromSuperview];
-    [self.referenceView insertSubview:self.leftController.view belowSubview:self.slidingControllerView];
-    [self.rightController.view removeFromSuperview];
-    [self.referenceView insertSubview:self.rightController.view belowSubview:self.slidingControllerView];
-
-    self.centerView.frame = self.referenceBounds;
-    self.centerController.view.frame = self.referenceBounds;
-    self.slidingControllerView.frame = self.referenceBounds;
-    self.slidingControllerView.hidden = NO;
-    self.leftController.view.frame = self.referenceBounds;
-    self.leftController.view.hidden = YES;
-    self.rightController.view.frame = self.referenceBounds;
-    self.rightController.view.hidden = YES;
-
-    [self applyShadowToSlidingView];
-
-    _viewAppeared = YES;
     
     [self addPanners];
 
@@ -336,51 +359,47 @@
         [self centerViewVisible];
     else
         [self centerViewHidden];
+   
+    if (appeared) {
+        [self relayAppearanceMethod:^(UIViewController *controller) {
+            [controller viewWillAppear:animated];
+        }];
+    }
 }
 
 - (void)viewDidAppear:(BOOL)animated {
     [super viewDidAppear:animated];
     
-    BOOL sendMessagesToChildren = ![self respondsToSelector:@selector(automaticallyForwardAppearanceAndRotationMethodsToChildViewControllers)];
-    if (sendMessagesToChildren) {
-        [self.centerController viewDidAppear:animated];
-        [self.leftController viewDidAppear:animated];
-        [self.rightController viewDidAppear:animated];
-    }
+    [self relayAppearanceMethod:^(UIViewController *controller) {
+        [controller viewDidAppear:animated];
+    }];
 }
 
 - (void)viewWillDisappear:(BOOL)animated {
     [super viewWillDisappear:animated];
     
-    BOOL sendMessagesToChildren = ![self respondsToSelector:@selector(automaticallyForwardAppearanceAndRotationMethodsToChildViewControllers)];
-    if (sendMessagesToChildren) {
-        [self.centerController viewWillDisappear:animated];
-        [self.leftController viewWillDisappear:animated];
-        [self.rightController viewWillDisappear:animated];
-    }
+    [self relayAppearanceMethod:^(UIViewController *controller) {
+        [controller viewWillDisappear:animated];
+    }];
 
     [self removePanners];
     
     [self closeLeftView];
     [self closeRightView];
-    
-    _viewAppeared = NO;
 }
 
 - (void)viewDidDisappear:(BOOL)animated {
     [super viewDidDisappear:animated];
 
-    [self.centerController.view removeFromSuperview];
-    [self.leftController.view removeFromSuperview];
-    [self.rightController.view removeFromSuperview];
+//    [self.centerController.view removeFromSuperview];
+//    [self.leftController.view removeFromSuperview];
+//    [self.rightController.view removeFromSuperview];
+//
+//    _viewAppeared = NO;
 
-    BOOL sendMessagesToChildren = ![self respondsToSelector:@selector(automaticallyForwardAppearanceAndRotationMethodsToChildViewControllers)];
-    if (sendMessagesToChildren) {
-        [self.centerController viewDidDisappear:animated];
-        [self.leftController viewDidDisappear:animated];
-        [self.rightController viewDidDisappear:animated];
-    }
-    _viewAppeared = NO;
+    [self relayAppearanceMethod:^(UIViewController *controller) {
+        [controller viewDidDisappear:animated];
+    }];
 }
 
 - (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation
@@ -685,6 +704,17 @@
     }];
 }
 
+#pragma mark - Pre iOS5 message relaying
+
+- (void)relayAppearanceMethod:(void(^)(UIViewController* controller))relay {
+//    BOOL mustRelay = ![self respondsToSelector:@selector(automaticallyForwardAppearanceAndRotationMethodsToChildViewControllers)] || ![self performSelector:@selector(automaticallyForwardAppearanceAndRotationMethodsToChildViewControllers)];
+//
+//    if (!mustRelay) return;
+//    
+    relay(self.centerController);
+    relay(self.leftController);
+    relay(self.rightController);
+}
 
 #pragma mark - center view hidden stuff
 
@@ -742,6 +772,8 @@
 }
 
 - (void)panned:(UIPanGestureRecognizer*)panner {
+    if (!_enabled) return;
+    
     CGPoint pan = [panner translationInView:self.referenceView];
     
     // restarts
@@ -769,7 +801,16 @@
         [self centerViewHidden];
     }
 
-
+    if (panner.state == UIGestureRecognizerStateBegan) {
+        NSLog(@"hidden = %d %d", self.leftController.view.hidden, self.rightController.view.hidden);
+        if (x > 0) {
+            BOOL ok = [self checkDelegate:@selector(viewDeckControllerWillOpenLeftView:animated:) animated:NO];
+        }
+        else if (x < 0) {
+            BOOL ok = [self checkDelegate:@selector(viewDeckControllerWillOpenRightView:animated:) animated:NO];
+        }
+    }
+    
     if (panner.state == UIGestureRecognizerStateEnded) {
         if ([panner velocityInView:self.referenceView].x > 0) {
             if (x > (self.referenceBounds.size.width-self.rightLedge)/3.0) 
@@ -798,7 +839,8 @@
 - (void)addPanner:(UIView*)view {
     if (!view) return;
     
-    UIPanGestureRecognizer* panner = II_AUTORELEASE([[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(panned:)]);
+    UIPanGestureRecognizer* panner = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(panned:)];
+    II_AUTORELEASE(panner);
     panner.cancelsTouchesInView = YES;
     panner.delegate = self;
     [view addGestureRecognizer:panner];
@@ -847,17 +889,40 @@
 #pragma mark - Delegate convenience methods
 
 - (BOOL)checkDelegate:(SEL)selector animated:(BOOL)animated {
-    if (!self.delegate || ![self.delegate respondsToSelector:selector]) 
-        return YES; // assume YES
-    
-    return (BOOL)objc_msgSend(self.delegate, selector, self, animated);
+    BOOL ok = YES;
+    if (self.delegate && [self.delegate respondsToSelector:selector]) 
+        ok = ok & (BOOL)objc_msgSend(self.delegate, selector, self, animated);
+
+    for (UIViewController* controller in self.controllers) {
+        // check controller first
+        if ([controller respondsToSelector:selector]) 
+            ok = ok & (BOOL)objc_msgSend(controller, selector, self, animated);
+        // if that fails, check if it's a navigation controller and use the top controller
+        else if ([controller isKindOfClass:[UINavigationController class]]) {
+            UIViewController* topController = ((UINavigationController*)controller).topViewController;
+            if ([topController respondsToSelector:selector]) 
+                ok = ok & (BOOL)objc_msgSend(topController, selector, self, animated);
+        }
+    }
+
+    return ok;
 }
 
 - (void)performDelegate:(SEL)selector animated:(BOOL)animated {
-    if (!self.delegate || ![self.delegate respondsToSelector:selector]) 
-        return;
-    
-    objc_msgSend(self.delegate, selector, self, animated);
+    if (self.delegate && [self.delegate respondsToSelector:selector]) 
+        objc_msgSend(self.delegate, selector, self, animated);
+
+    for (UIViewController* controller in self.controllers) {
+        // check controller first
+        if ([controller respondsToSelector:selector]) 
+            objc_msgSend(controller, selector, self, animated);
+        // if that fails, check if it's a navigation controller and use the top controller
+        else if ([controller isKindOfClass:[UINavigationController class]]) {
+            UIViewController* topController = ((UINavigationController*)controller).topViewController;
+            if ([topController respondsToSelector:selector]) 
+                objc_msgSend(topController, selector, self, animated);
+        }
+    }
 }
 
 
@@ -880,7 +945,8 @@
     }
     
     II_RELEASE(_panningView);
-    _panningView = II_RETAIN(panningView);     
+    _panningView = panningView;     
+    II_RETAIN(_panningView);     
 }
 
 - (void)setNavigationControllerBehavior:(IIViewDeckNavigationControllerBehavior)navigationControllerBehavior {
@@ -915,15 +981,23 @@
         }
     }
 
+    _leftController.viewDeckController = nil;
     II_RELEASE(_leftController);
-    _leftController = II_RETAIN(leftController);
+    _leftController = leftController;
+    II_RETAIN(_leftController);
+    _leftController.viewDeckController = self;
 }
+
+
 
 - (void)setCenterController:(UIViewController *)centerController {
     [centerController setViewDeckController:self];
     if (!_viewAppeared) {
+        _centerController.viewDeckController = nil;
         II_RELEASE(_centerController);
-        _centerController = II_RETAIN(centerController);
+        _centerController = centerController;
+        _centerController.viewDeckController = self;
+        II_RETAIN(_centerController);
         return;
     }
 
@@ -953,9 +1027,10 @@
             navController.navigationBarHidden = YES;
         }
 
-        centerController.viewDeckController = self;
         II_RELEASE(_centerController);
-        _centerController = II_RETAIN(centerController);
+        _centerController = centerController;
+        II_RETAIN(_centerController);
+        _centerController.viewDeckController = self;
         [self setSlidingAndReferenceViews];
         [self.centerView addSubview:centerController.view];
         centerController.view.frame = currentFrame;
@@ -996,8 +1071,11 @@
         }
     }
 
+    _rightController.viewDeckController = nil;
     II_RELEASE(rightController);
-    _rightController = II_RETAIN(rightController);
+    _rightController = rightController;
+    II_RETAIN(_rightController);
+    _rightController.viewDeckController = self;
 }
 
 - (void)setSlidingAndReferenceViews {
@@ -1051,6 +1129,11 @@
     shadowedView.layer.shadowPath = [[UIBezierPath bezierPathWithRect:self.referenceBounds] CGPath];
 }
 
+- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context {
+    if ([keyPath isEqualToString:@"frame"]) {
+        self.slidingControllerView.layer.shadowPath = [UIBezierPath bezierPathWithRect:self.referenceBounds].CGPath;
+    }
+}
 
 @end
 
