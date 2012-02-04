@@ -72,6 +72,7 @@ typedef enum {
 @property (nonatomic, retain) UIView* panningView; 
 @property (nonatomic, readonly, retain) NSArray* controllers;
 @property (nonatomic, getter=isEnabled) BOOL enabled;
+@property (nonatomic) BOOL elastic;
 
 @property (nonatomic) CGFloat leftLedge;
 @property (nonatomic) CGFloat rightLedge;
@@ -122,6 +123,8 @@ typedef enum {
 @protocol IIViewDeckControllerDelegate <NSObject>
 
 @optional
+- (void)viewDeckController:(IIViewDeckController*)viewDeckController applyShadow:(CALayer*)shadowLayer withBounds:(CGRect)rect;
+
 - (void)viewDeckController:(IIViewDeckController*)viewDeckController didPanToOffset:(CGFloat)offset;
 - (void)viewDeckController:(IIViewDeckController *)viewDeckController didBounceWithClosingController:(UIViewController*)openController;
 - (BOOL)viewDeckControllerWillOpenLeftView:(IIViewDeckController*)viewDeckController animated:(BOOL)animated;
