@@ -75,6 +75,15 @@
 @property (nonatomic, retain) UIView* centerView;
 @property (nonatomic, readonly) UIView* slidingControllerView;
 
+// Use these methods to access views to access view properties
+// Accessing them through controller.view will load them when it's not necessary
+@property (nonatomic, readonly) UIView *centerControllerView;
+@property (nonatomic, readonly) UIView *leftControllerView;
+@property (nonatomic, readonly) UIView *rightControllerView;
+
+@property (nonatomic, readonly) BOOL isShowingLeftController;
+@property (nonatomic, readonly) BOOL isShowingRightController;
+
 - (void)cleanup;
 
 - (BOOL)closeLeftViewAnimated:(BOOL)animated options:(UIViewAnimationOptions)options completion:(void(^)(IIViewDeckController* controller))completed;
@@ -303,16 +312,19 @@
     self.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
     self.view.autoresizesSubviews = YES;
     self.view.clipsToBounds = YES;
-}
-
-- (void)viewDidLoad {
-    [super viewDidLoad];
     
     self.centerView = II_AUTORELEASE([[UIView alloc] init]);
     self.centerView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
     self.centerView.autoresizesSubviews = YES;
     self.centerView.clipsToBounds = YES;
     [self.view addSubview:self.centerView];
+    
+    [self.centerControllerView removeFromSuperview];
+    [self.centerView addSubview:self.centerController.view];
+}
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
     
     self.originalShadowRadius = 0;
     self.originalShadowOpacity = 0;
@@ -337,25 +349,14 @@
     BOOL appeared = _viewAppeared;
     if (!_viewAppeared) {
         [self setSlidingAndReferenceViews];
-        
-        [self.centerController.view removeFromSuperview];
-        [self.centerView addSubview:self.centerController.view];
-        [self.leftController.view removeFromSuperview];
-        [self.referenceView insertSubview:self.leftController.view belowSubview:self.slidingControllerView];
-        [self.rightController.view removeFromSuperview];
-        [self.referenceView insertSubview:self.rightController.view belowSubview:self.slidingControllerView];
+
+
         
         self.centerView.frame = self.referenceBounds;
         self.centerController.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
         self.centerController.view.frame = self.referenceBounds;
         self.slidingControllerView.frame = self.referenceBounds;
         self.slidingControllerView.hidden = NO;
-        self.leftController.view.frame = self.referenceBounds;
-        self.leftController.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-        self.leftController.view.hidden = YES;
-        self.rightController.view.frame = self.referenceBounds;
-        self.rightController.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-        self.rightController.view.hidden = YES;
         
         [self applyShadowToSlidingView];
         _viewAppeared = YES;
@@ -415,8 +416,13 @@
     _preRotationWidth = self.referenceBounds.size.width;
         
     if (self.rotationBehavior == IIViewDeckRotationKeepsViewSizes) {
-        _leftWidth = self.leftController.view.frame.size.width;
-        _rightWidth = self.rightController.view.frame.size.width;
+        if (self.leftController.isViewLoaded) {
+            _leftWidth = self.leftController.view.frame.size.width;
+        }
+        
+        if (self.rightController.isViewLoaded) {
+            _rightWidth = self.rightController.view.frame.size.width;
+        }
     }
     
     BOOL should = YES;
@@ -545,12 +551,20 @@
     // also close the right view if it's open. Since the delegate can cancel the close, check the result.
     if (![self closeRightViewAnimated:animated options:options completion:completed]) return;
     
+    if (!self.leftControllerView) {
+        [self.referenceView insertSubview:self.leftController.view belowSubview:self.slidingControllerView];
+        self.leftController.view.frame = self.referenceBounds;
+        self.leftController.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+        self.leftController.view.hidden = YES;
+    }
+    [self.leftController viewWillAppear:YES];
     [UIView animateWithDuration:OPEN_SLIDE_DURATION(animated) delay:0 options:options | UIViewAnimationOptionLayoutSubviews | UIViewAnimationOptionBeginFromCurrentState animations:^{
         _animating = YES;
         self.leftController.view.hidden = NO;
         self.slidingControllerView.frame = [self slidingRectForOffset:self.referenceBounds.size.width - self.leftLedge];
         [self centerViewHidden];
     } completion:^(BOOL finished) {
+        [self.leftController viewDidAppear:YES];
         _animating = NO;
         if (completed) completed(self);
         [self performDelegate:@selector(viewDeckControllerDidOpenLeftView:animated:) animated:animated];
@@ -571,11 +585,13 @@
     // check the delegate to allow closing
     if (![self checkDelegate:@selector(viewDeckControllerWillCloseLeftView:animated:) animated:animated]) return NO;
 
+    [self.leftController viewWillDisappear:YES];
     [UIView animateWithDuration:CLOSE_SLIDE_DURATION(animated) delay:0 options:options | UIViewAnimationOptionLayoutSubviews animations:^{
         _animating = YES;
         self.slidingControllerView.frame = [self slidingRectForOffset:0];
         [self centerViewVisible];
     } completion:^(BOOL finished) {
+        [self.leftController viewDidDisappear:YES];
         _animating = NO;
         self.leftController.view.hidden = YES;
         if (completed) completed(self);
@@ -596,6 +612,7 @@
     // check the delegate to allow closing
     if (![self checkDelegate:@selector(viewDeckControllerWillCloseLeftView:animated:) animated:YES]) return;
     
+    [self.leftController viewWillDisappear:YES];
     // first open the view completely, run the block (to allow changes) and close it again.
     [UIView animateWithDuration:OPEN_SLIDE_DURATION(YES) delay:0 options:UIViewAnimationOptionCurveEaseIn | UIViewAnimationOptionLayoutSubviews animations:^{
         _animating = YES;
@@ -610,6 +627,7 @@
             self.slidingControllerView.frame = [self slidingRectForOffset:0];
             [self centerViewVisible];
         } completion:^(BOOL finished) {
+            [self.leftController viewDidDisappear:YES];
             _animating = NO;
             self.leftController.view.hidden = YES;
             if (completed) completed(self);
@@ -660,12 +678,21 @@
     // also close the left view if it's open. Since the delegate can cancel the close, check the result.
     if (![self closeLeftViewAnimated:animated options:options completion:completed]) return;
     
+    if (!self.rightControllerView) {
+        [self.referenceView insertSubview:self.rightController.view belowSubview:self.slidingControllerView];
+        self.rightController.view.frame = self.referenceBounds;
+        self.rightController.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+        self.rightController.view.hidden = YES;
+    }
+    
+    [self.rightController viewWillAppear:YES];
     [UIView animateWithDuration:OPEN_SLIDE_DURATION(animated) delay:0 options:options | UIViewAnimationOptionLayoutSubviews animations:^{
         _animating = YES;
         self.rightController.view.hidden = NO;
         self.slidingControllerView.frame = [self slidingRectForOffset:self.rightLedge - self.referenceBounds.size.width];
         [self centerViewHidden];
     } completion:^(BOOL finished) {
+        [self.rightController viewDidAppear:YES];
         _animating = NO;
         if (completed) completed(self);
         [self performDelegate:@selector(viewDeckControllerDidOpenRightView:animated:) animated:animated];
@@ -686,11 +713,13 @@
     // check the delegate to allow closing
     if (![self checkDelegate:@selector(viewDeckControllerWillCloseRightView:animated:) animated:animated]) return NO;
     
+    [self.rightController viewWillDisappear:YES];
     [UIView animateWithDuration:CLOSE_SLIDE_DURATION(animated) delay:0 options:options | UIViewAnimationOptionLayoutSubviews animations:^{
         _animating = YES;
         self.slidingControllerView.frame = [self slidingRectForOffset:0];
         [self centerViewVisible];
     } completion:^(BOOL finished) {
+        [self.rightController viewDidDisappear:YES];
         _animating = NO;
         if (completed) completed(self);
         self.rightController.view.hidden = YES;
@@ -711,6 +740,7 @@
     // check the delegate to allow closing
     if (![self checkDelegate:@selector(viewDeckControllerWillCloseRightView:animated:) animated:YES]) return;
     
+    [self.rightController viewWillDisappear:YES];
     [UIView animateWithDuration:OPEN_SLIDE_DURATION(YES) delay:0 options:UIViewAnimationOptionCurveEaseIn | UIViewAnimationOptionLayoutSubviews animations:^{
         _animating = YES;
         self.slidingControllerView.frame = [self slidingRectForOffset:-self.referenceBounds.size.width];
@@ -723,6 +753,7 @@
             self.slidingControllerView.frame = [self slidingRectForOffset:0];
             [self centerViewVisible];
         } completion:^(BOOL finished) {
+            [self.rightController viewDidDisappear:YES];
             _animating = NO;
             self.rightController.view.hidden = YES;
             if (completed) completed(self);
@@ -736,8 +767,8 @@
 
 - (void)relayAppearanceMethod:(void(^)(UIViewController* controller))relay {
     relay(self.centerController);
-    relay(self.leftController);
-    relay(self.rightController);
+//    relay(self.leftController);
+//    relay(self.rightController);
 }
 
 #pragma mark - center view hidden stuff
@@ -973,9 +1004,49 @@
 
 
 #pragma mark - Properties
+- (BOOL)isShowingLeftController
+{
+    return self.slidingControllerView.frame.origin.x > 0;
+}
+
+- (BOOL)isShowingRightController
+{
+    return self.slidingControllerView.frame.origin.x < 0;
+}
+
+- (UIView *)centerControllerView
+{
+    if (self.centerController.isViewLoaded) {
+        return self.centerController.view;
+    }
+    
+    return nil;
+}
+- (UIView *)leftControllerView
+{
+    if (self.leftController.isViewLoaded) {
+        return self.leftController.view;
+    }
+    
+    return nil;
+}
+
+- (UIView *)rightControllerView
+{
+    if (self.rightController.isViewLoaded) {
+        return self.rightController.view;
+    }
+    
+    return nil;
+}
+
+- (BOOL)automaticallyForwardAppearanceAndRotationMethodsToChildViewControllers
+{
+    return NO;
+}
 
 - (BOOL)mustRelayAppearance {
-    return ![self respondsToSelector:@selector(automaticallyForwardAppearanceAndRotationMethodsToChildViewControllers)] || ![self performSelector:@selector(automaticallyForwardAppearanceAndRotationMethodsToChildViewControllers)];
+    return YES;
 }
 
 - (void)setTitle:(NSString *)title {
@@ -1022,9 +1093,14 @@
         if (_leftController == leftController) return;
         
         if (_leftController) {
-            if (self.mustRelayAppearance) [_rightController viewWillDisappear:NO];
-            [_leftController.view removeFromSuperview];
-            if (self.mustRelayAppearance) [_rightController viewDidDisappear:NO];
+            if (self.isShowingLeftController) {
+                [_leftController viewWillDisappear:NO];
+            }
+            [self.leftControllerView removeFromSuperview];
+            if (self.isShowingLeftController) {
+                [_leftController viewDidDisappear:NO];
+            }
+
             _leftController.viewDeckController = nil;
         }
         
@@ -1033,7 +1109,9 @@
             if (leftController == self.rightController) self.rightController = nil;
 
             leftController.viewDeckController = self;
-            if (self.mustRelayAppearance) [_leftController viewWillAppear:NO];
+            if (self.isShowingLeftController) {
+                [_leftController viewWillAppear:NO];
+            }
             if (self.slidingController)
                 [self.referenceView insertSubview:leftController.view belowSubview:self.slidingControllerView];
             else
@@ -1041,6 +1119,10 @@
             leftController.view.hidden = self.slidingControllerView.frame.origin.x <= 0;
             leftController.view.frame = self.referenceBounds;
             leftController.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+            
+            if (self.isShowingLeftController) {
+                [_leftController viewDidAppear:NO];
+            }
         }
     }
 
@@ -1049,7 +1131,6 @@
     _leftController = leftController;
     II_RETAIN(_leftController);
     _leftController.viewDeckController = self;
-    if (_viewAppeared && self.mustRelayAppearance) [_leftController viewDidAppear:NO];
 }
 
 
@@ -1125,9 +1206,13 @@
         if (_rightController == rightController) return;
         
         if (_rightController) {
-            if (self.mustRelayAppearance) [_rightController viewWillDisappear:NO];
-            [_rightController.view removeFromSuperview];
-            if (self.mustRelayAppearance) [_rightController viewDidDisappear:NO];
+            if (self.isShowingRightController) {
+                [_rightController viewWillDisappear:NO];
+            }
+            [self.rightControllerView removeFromSuperview];
+            if (self.isShowingRightController) {
+                [_rightController viewDidDisappear:NO];
+            }
             _rightController.viewDeckController = nil;
         }
         
@@ -1136,7 +1221,9 @@
             if (rightController == self.leftController) self.leftController = nil;
             
             rightController.viewDeckController = self;
-            if (self.mustRelayAppearance) [_rightController viewWillAppear:NO];
+            if (self.isShowingRightController) {
+                [_rightController viewWillAppear:NO];
+            }
             if (self.slidingController) 
                 [self.referenceView insertSubview:rightController.view belowSubview:self.slidingControllerView];
             else
@@ -1144,6 +1231,10 @@
             rightController.view.hidden = self.slidingControllerView.frame.origin.x >= 0;
             rightController.view.frame = self.referenceBounds;
             rightController.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+            
+            if (self.isShowingRightController) {
+                [_rightController viewDidAppear:NO];
+            }
         }
     }
 
@@ -1152,7 +1243,6 @@
     _rightController = rightController;
     II_RETAIN(_rightController);
     _rightController.viewDeckController = self;
-    if (_viewAppeared && self.mustRelayAppearance) [_rightController viewDidAppear:NO];
 }
 
 - (void)setSlidingAndReferenceViews {
