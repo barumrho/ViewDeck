@@ -757,9 +757,9 @@
 #pragma mark - Pre iOS5 message relaying
 
 - (void)relayAppearanceMethod:(void(^)(UIViewController* controller))relay {
-    relay(self.centerController);
-//    relay(self.leftController);
-//    relay(self.rightController);
+    if (self.mustRelayAppearance) {
+        relay(self.centerController);
+    }
 }
 
 #pragma mark - center view hidden stuff
@@ -1054,7 +1054,7 @@
 }
 
 - (BOOL)mustRelayAppearance {
-    return YES;
+    return ![UIViewController instancesRespondToSelector:@selector(automaticallyForwardAppearanceAndRotationMethodsToChildViewControllers)];
 }
 
 - (void)setTitle:(NSString *)title {
