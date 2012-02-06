@@ -1004,22 +1004,18 @@
 
 - (void)loadLeftControllerView
 {
-    if (![self.leftController isViewLoaded]) {
-        [self.referenceView insertSubview:self.leftController.view belowSubview:self.slidingControllerView];
-        self.leftController.view.frame = self.referenceBounds;
-        self.leftController.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-        self.leftController.view.hidden = YES;
-    }
+    [self.referenceView insertSubview:self.leftController.view belowSubview:self.slidingControllerView];
+    self.leftController.view.frame = self.referenceBounds;
+    self.leftController.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    self.leftController.view.hidden = YES;
 }
 
 - (void)loadRightControllerView
 {
-    if (![self.rightController isViewLoaded]) {
-        [self.referenceView insertSubview:self.rightController.view belowSubview:self.slidingControllerView];
-        self.rightController.view.frame = self.referenceBounds;
-        self.rightController.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-        self.rightController.view.hidden = YES;
-    }
+    [self.referenceView insertSubview:self.rightController.view belowSubview:self.slidingControllerView];
+    self.rightController.view.frame = self.referenceBounds;
+    self.rightController.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    self.rightController.view.hidden = YES;
 }
 
 - (UIView *)centerControllerView
