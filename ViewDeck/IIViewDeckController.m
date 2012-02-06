@@ -84,6 +84,9 @@
 @property (nonatomic, readonly) BOOL isShowingLeftController;
 @property (nonatomic, readonly) BOOL isShowingRightController;
 
+- (void)loadLeftControllerView;
+- (void)loadRightControllerView;
+
 - (void)cleanup;
 
 - (BOOL)closeLeftViewAnimated:(BOOL)animated options:(UIViewAnimationOptions)options completion:(void(^)(IIViewDeckController* controller))completed;
@@ -349,8 +352,6 @@
     BOOL appeared = _viewAppeared;
     if (!_viewAppeared) {
         [self setSlidingAndReferenceViews];
-
-
         
         self.centerView.frame = self.referenceBounds;
         self.centerController.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
@@ -551,12 +552,7 @@
     // also close the right view if it's open. Since the delegate can cancel the close, check the result.
     if (![self closeRightViewAnimated:animated options:options completion:completed]) return;
     
-    if (!self.leftControllerView) {
-        [self.referenceView insertSubview:self.leftController.view belowSubview:self.slidingControllerView];
-        self.leftController.view.frame = self.referenceBounds;
-        self.leftController.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-        self.leftController.view.hidden = YES;
-    }
+    [self loadLeftControllerView];
     [self.leftController viewWillAppear:YES];
     [UIView animateWithDuration:OPEN_SLIDE_DURATION(animated) delay:0 options:options | UIViewAnimationOptionLayoutSubviews | UIViewAnimationOptionBeginFromCurrentState animations:^{
         _animating = YES;
@@ -678,13 +674,8 @@
     // also close the left view if it's open. Since the delegate can cancel the close, check the result.
     if (![self closeLeftViewAnimated:animated options:options completion:completed]) return;
     
-    if (!self.rightControllerView) {
-        [self.referenceView insertSubview:self.rightController.view belowSubview:self.slidingControllerView];
-        self.rightController.view.frame = self.referenceBounds;
-        self.rightController.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-        self.rightController.view.hidden = YES;
-    }
-    
+
+    [self loadRightControllerView];    
     [self.rightController viewWillAppear:YES];
     [UIView animateWithDuration:OPEN_SLIDE_DURATION(animated) delay:0 options:options | UIViewAnimationOptionLayoutSubviews animations:^{
         _animating = YES;
@@ -834,9 +825,14 @@
     
     if (!self.leftController) x = MIN(0, x);
     if (!self.rightController) x = MAX(0, x);
+    
+    if ([panner state] == UIGestureRecognizerStateBegan) {
+        [self loadLeftControllerView];
+        [self loadRightControllerView];
+    }
 
     CGFloat w = self.referenceBounds.size.width;
-    CGFloat lx = MAX(MIN(x, w-self.leftLedge), -w+self.rightLedge);
+    CGFloat lx = MAX(MIN(x, w - self.leftLedge), - w + self.rightLedge);
 
     if (self.elastic) {
         CGFloat dx = ABS(x) - ABS(lx);
@@ -844,36 +840,28 @@
             dx = dx / logf(dx + 1) * 2;
             x = lx + (x < 0 ? -dx : dx);
         }
-    }
-    else {
+    } else {
         x = lx;
     }
+
     self.slidingControllerView.frame = [self slidingRectForOffset:x];
 
-    BOOL rightWasHidden = self.rightController.view.hidden;
-    BOOL leftWasHidden = self.leftController.view.hidden;
     self.rightController.view.hidden = x >= 0;
     self.leftController.view.hidden = x <= 0;
     
-    if ([self.delegate respondsToSelector:@selector(viewDeckController:didPanToOffset:)])
+    if ([self.delegate respondsToSelector:@selector(viewDeckController:didPanToOffset:)]) {
         [self.delegate viewDeckController:self didPanToOffset:x];
-
-    if ((self.leftController.view.hidden && !leftWasHidden) || (self.rightController.view.hidden && !rightWasHidden)) {
-        [self centerViewVisible];
-    } else if (leftWasHidden && rightWasHidden && (!self.leftController.view.hidden || !self.leftController.view.hidden)) {
-        [self centerViewHidden];
     }
 
     if (panner.state == UIGestureRecognizerStateBegan) {
         if (x > 0) {
-            [self checkDelegate:@selector(viewDeckControllerWillOpenLeftView:animated:) animated:NO];
-        }
-        else if (x < 0) {
-            [self checkDelegate:@selector(viewDeckControllerWillOpenRightView:animated:) animated:NO];
+//            [self checkDelegate:@selector(viewDeckControllerWillOpenLeftView:animated:) animated:NO];
+        } else if (x < 0) {
+//            [self checkDelegate:@selector(viewDeckControllerWillOpenRightView:animated:) animated:NO];
         }
     }
     
-    if (panner.state == UIGestureRecognizerStateEnded) {    
+    if (panner.state == UIGestureRecognizerStateEnded) {
         CGFloat lw3 = (w-self.leftLedge) / 3.0;
         CGFloat rw3 = (w-self.rightLedge) / 3.0;
         CGFloat velocity = [panner velocityInView:self.referenceView].x;
@@ -1012,6 +1000,26 @@
 - (BOOL)isShowingRightController
 {
     return self.slidingControllerView.frame.origin.x < 0;
+}
+
+- (void)loadLeftControllerView
+{
+    if (![self.leftController isViewLoaded]) {
+        [self.referenceView insertSubview:self.leftController.view belowSubview:self.slidingControllerView];
+        self.leftController.view.frame = self.referenceBounds;
+        self.leftController.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+        self.leftController.view.hidden = YES;
+    }
+}
+
+- (void)loadRightControllerView
+{
+    if (![self.rightController isViewLoaded]) {
+        [self.referenceView insertSubview:self.rightController.view belowSubview:self.slidingControllerView];
+        self.rightController.view.frame = self.referenceBounds;
+        self.rightController.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+        self.rightController.view.hidden = YES;
+    }
 }
 
 - (UIView *)centerControllerView
