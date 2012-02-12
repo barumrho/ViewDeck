@@ -349,7 +349,6 @@
     
     [self.view addObserver:self forKeyPath:@"bounds" options:NSKeyValueChangeSetting context:nil];
 
-    BOOL appeared = _viewAppeared;
     if (!_viewAppeared) {
         [self setSlidingAndReferenceViews];
         
@@ -372,11 +371,9 @@
     else
         [self centerViewHidden];
    
-    if (appeared) {
-        [self relayAppearanceMethod:^(UIViewController *controller) {
-            [controller viewWillAppear:animated];
-        }];
-    }
+    [self relayAppearanceMethod:^(UIViewController *controller) {
+        [controller viewWillAppear:animated];
+    }];
 }
 
 - (void)viewDidAppear:(BOOL)animated {
@@ -757,9 +754,7 @@
 #pragma mark - Pre iOS5 message relaying
 
 - (void)relayAppearanceMethod:(void(^)(UIViewController* controller))relay {
-    if (self.mustRelayAppearance) {
-        relay(self.centerController);
-    }
+    relay(self.centerController);
 }
 
 #pragma mark - center view hidden stuff
@@ -1042,11 +1037,6 @@
     }
     
     return nil;
-}
-
-- (BOOL)automaticallyForwardAppearanceAndRotationMethodsToChildViewControllers
-{
-    return NO;
 }
 
 - (BOOL)mustRelayAppearance {
@@ -1346,33 +1336,12 @@ static char* viewDeckControllerKey = "ViewDeckController";
 }
 
 - (void)setViewDeckController:(IIViewDeckController*)viewDeckController {
+    if (!self.parentViewController) {
+        [self setValue:viewDeckController forKey:@"parentViewController"];
+    } else if (viewDeckController == nil && [self.parentViewController isKindOfClass:[IIViewDeckController class]]) {
+        [self setValue:nil forKey:@"parentViewController"];
+    }
     objc_setAssociatedObject(self, viewDeckControllerKey, viewDeckController, OBJC_ASSOCIATION_RETAIN);
-}
-
-- (void)vdc_presentModalViewController:(UIViewController *)modalViewController animated:(BOOL)animated {
-    UIViewController* controller = self.viewDeckController ? self.viewDeckController : self;
-    [controller vdc_presentModalViewController:modalViewController animated:animated]; // when we get here, the vdc_ method is actually the old, real method
-}
-
-- (void)vdc_presentViewController:(UIViewController *)viewControllerToPresent animated:(BOOL)animated completion:(void (^)(void))completion {
-    NSLog(@"presentvc = %@", self);
-    UIViewController* controller = self.viewDeckController ? self.viewDeckController : self;
-    [controller vdc_presentViewController:viewControllerToPresent animated:animated completion:completion]; // when we get here, the vdc_ method is actually the old, real method
-}
-
-+ (void)vdc_swizzle {
-    SEL presentModal = @selector(presentModalViewController:animated:);
-    SEL vdcPresentModal = @selector(vdc_presentModalViewController:animated:);
-    method_exchangeImplementations(class_getInstanceMethod(self, presentModal), class_getInstanceMethod(self, vdcPresentModal));
-
-    SEL presentVC = @selector(presentViewController:animated:completion:);
-    SEL vdcPresentVC = @selector(vdc_presentViewController:animated:completion:);
-    method_exchangeImplementations(class_getInstanceMethod(self, presentVC), class_getInstanceMethod(self, vdcPresentVC));
-}
-
-+ (void)load {
-    [super load];
-    [self vdc_swizzle];
 }
 
 
