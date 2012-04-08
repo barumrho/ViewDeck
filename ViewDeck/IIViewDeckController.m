@@ -807,7 +807,7 @@
 
 - (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldReceiveTouch:(UITouch *)touch {
     _panOrigin = self.slidingControllerView.frame.origin.x;
-    return YES;
+    return self.enabled;
 }
 
 - (void)panned:(UIPanGestureRecognizer*)panner {
