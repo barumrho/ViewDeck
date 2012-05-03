@@ -1119,13 +1119,12 @@
         if (![[super title] isEqualToString:self.centerController.title]) {
             self.title = self.centerController.title;
         }
-    }
-    else if ([keyPath isEqualToString:@"bounds"]) {
+    } else if ([keyPath isEqualToString:@"bounds"]) {
         CGFloat offset = self.slidingControllerView.frame.origin.x;
         self.slidingControllerView.frame = [self slidingRectForOffset:offset];
         self.slidingControllerView.layer.shadowPath = [UIBezierPath bezierPathWithRect:self.referenceBounds].CGPath;
         UINavigationController *navController = [self.centerController isKindOfClass:[UINavigationController class]] 
-            ? (UINavigationController*)self.centerController 
+            ? (UINavigationController *)self.centerController 
             : nil;
         if (navController != nil && !navController.navigationBarHidden) {
             navController.navigationBarHidden = YES;
@@ -1173,13 +1172,12 @@
 
 #pragma mark -
 
-@implementation UIViewController (UIViewDeckItem) 
-
+@implementation UIViewController(UIViewDeckItem) 
 @dynamic viewDeckController;
 
 static char *viewDeckControllerKey = "ViewDeckController";
 
-- (IIViewDeckController*)viewDeckController {
+- (IIViewDeckController *)viewDeckController {
     id result = objc_getAssociatedObject(self, viewDeckControllerKey);
     if (!result && self.navigationController) 
         return [self.navigationController viewDeckController];
@@ -1187,7 +1185,7 @@ static char *viewDeckControllerKey = "ViewDeckController";
     return result;
 }
 
-- (void)setViewDeckController:(IIViewDeckController*)viewDeckController {
+- (void)setViewDeckController:(IIViewDeckController *)viewDeckController {
     if (!self.parentViewController) {
         [self setValue:viewDeckController forKey:@"parentViewController"];
     } else if (viewDeckController == nil && [self.parentViewController isKindOfClass:[IIViewDeckController class]]) {
