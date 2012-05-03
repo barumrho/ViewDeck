@@ -77,7 +77,6 @@
 - (void)openRightViewAnimated:(BOOL)animated options:(UIViewAnimationOptions)options completion:(void(^)(IIViewDeckController *controller))completed;
 
 - (CGRect)slidingRectForOffset:(CGFloat)offset;
-- (CGSize)slidingSizeForOffset:(CGFloat)offset;
 
 - (void)setSlidingAndReferenceViews;
 - (void)applyShadowToSlidingView;
@@ -200,16 +199,17 @@
 }
 
 - (CGRect)slidingRectForOffset:(CGFloat)offset {
-    return (CGRect) { self.resizesCenterView && offset < 0 ? 0 : offset, 0, [self slidingSizeForOffset:offset] };
-}
-
-- (CGSize)slidingSizeForOffset:(CGFloat)offset {
-    if (!self.resizesCenterView || offset == 0) return self.referenceBounds.size;
+    CGRect bounds = self.referenceView.bounds;
+    bounds.origin.x += offset;
+    if (self.resizesCenterView) {
+        bounds.size.width -= ABS(offset);
+        
+        if (offset > 0) {
+            bounds.origin.x = 0;
+        }
+    }
     
-    if (offset < 0) 
-        return (CGSize) { self.referenceBounds.size.width + offset, self.referenceBounds.size.height };
-
-    return (CGSize) { self.referenceBounds.size.width - offset, self.referenceBounds.size.height };
+    return bounds;
 }
 
 #pragma mark - ledges
