@@ -133,7 +133,6 @@
         _navigationControllerBehavior = IIViewDeckNavigationControllerContained;
         _centerhiddenInteractivity = IIViewDeckCenterHiddenUserInteractive;
         self.rotationBehavior = IIViewDeckRotationKeepsLedgeSizes;
-        _viewAppeared = NO;
         _resizesCenterView = NO;
         self.panners = [NSMutableArray array];
         self.enabled = YES;
@@ -231,7 +230,6 @@
 #pragma mark - View lifecycle
 
 - (void)loadView {
-    _viewAppeared = NO;
     self.view = [[UIView alloc] init];
     self.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
     self.view.autoresizesSubviews = YES;
@@ -256,6 +254,7 @@
 }
 
 - (void)viewDidUnload {
+    _viewAppeared = NO;
     [self cleanup];
     [super viewDidUnload];
 }
@@ -919,7 +918,7 @@
     self.centerController.title = title;
 }
 
-- (NSString*)title {
+- (NSString *)title {
     return self.centerController.title;
 }
 
@@ -943,12 +942,8 @@
 }
 
 - (void)setNavigationControllerBehavior:(IIViewDeckNavigationControllerBehavior)navigationControllerBehavior {
-    if (!_viewAppeared) {
-        _navigationControllerBehavior = navigationControllerBehavior;
-    }
-    else {
-        @throw [NSException exceptionWithName:NSInternalInconsistencyException reason:@"Cannot set navigationcontroller behavior when the view deck is already showing." userInfo:nil];
-    }
+    NSAssert(!_viewAppeared, @"Cannot set navigationcontroller behavior when the view deck is already showing.");
+    _navigationControllerBehavior = navigationControllerBehavior;
 }
 
 - (void)setLeftController:(UIViewController *)leftController {
@@ -1035,7 +1030,7 @@
         _centerController = centerController;
         [_centerController addObserver:self forKeyPath:@"title" options:0 context:nil];
         _centerController.viewDeckController = self;
-        [self setSlidingAndReferenceViews];
+
         centerController.view.frame = currentFrame;
         centerController.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
         centerController.view.hidden = NO;
