@@ -68,8 +68,7 @@ typedef enum {
 @property(nonatomic, strong) UIViewController *leftController;
 @property(nonatomic, strong) UIViewController *rightController;
 @property(nonatomic, readonly, strong) UIViewController *slidingController;
-@property(nonatomic, strong) UIView *panningView; 
-@property(nonatomic, readonly, strong) NSArray *controllers;
+@property(nonatomic, strong) UIView *panningView;
 @property(nonatomic, getter=isEnabled) BOOL enabled;
 @property(nonatomic) BOOL elastic;
 
@@ -82,9 +81,6 @@ typedef enum {
 @property(nonatomic) IIViewDeckRotationBehavior rotationBehavior;
 
 - (id)initWithCenterViewController:(UIViewController *)centerController;
-- (id)initWithCenterViewController:(UIViewController *)centerController leftViewController:(UIViewController *)leftController;
-- (id)initWithCenterViewController:(UIViewController *)centerController rightViewController:(UIViewController *)rightController;
-- (id)initWithCenterViewController:(UIViewController *)centerController leftViewController:(UIViewController *)leftController rightViewController:(UIViewController*)rightController;
 
 - (void)showCenterView;
 - (void)showCenterView:(BOOL)animated;

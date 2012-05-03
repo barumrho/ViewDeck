@@ -128,8 +128,9 @@
 
 #pragma mark - Initalisation and deallocation
 
-- (id)initWithCenterViewController:(UIViewController*)centerController {
-    if ((self = [super init])) {
+- (id)initWithCenterViewController:(UIViewController *)centerController {
+    self = [super init];
+    if (self) {
         _elastic = YES;
         _panningMode = IIViewDeckFullViewPanning;
         _navigationControllerBehavior = IIViewDeckNavigationControllerContained;
@@ -153,28 +154,7 @@
         self.leftLedge = 44;
         self.rightLedge = 44;
     }
-    return self;
-}
 
-- (id)initWithCenterViewController:(UIViewController*)centerController leftViewController:(UIViewController*)leftController {
-    if ((self = [self initWithCenterViewController:centerController])) {
-        self.leftController = leftController;
-    }
-    return self;
-}
-
-- (id)initWithCenterViewController:(UIViewController*)centerController rightViewController:(UIViewController*)rightController {
-    if ((self = [self initWithCenterViewController:centerController])) {
-        self.rightController = rightController;
-    }
-    return self;
-}
-
-- (id)initWithCenterViewController:(UIViewController*)centerController leftViewController:(UIViewController*)leftController rightViewController:(UIViewController*)rightController {
-    if ((self = [self initWithCenterViewController:centerController])) {
-        self.leftController = leftController;
-        self.rightController = rightController;
-    }
     return self;
 }
 
@@ -205,8 +185,7 @@
 
 #pragma mark - Memory management
 
-- (void)didReceiveMemoryWarning
-{
+- (void)didReceiveMemoryWarning {
     [super didReceiveMemoryWarning];
     
     [self.centerController didReceiveMemoryWarning];
@@ -215,13 +194,6 @@
 }
 
 #pragma mark - Bookkeeping
-
-- (NSArray*)controllers {
-    NSMutableArray* result = [NSMutableArray arrayWithObject:self.centerController];
-    if (self.leftController) [result addObject:self.leftController];
-    if (self.rightController) [result addObject:self.rightController];
-    return [NSArray arrayWithArray:result];
-}
 
 - (CGRect)referenceBounds {
     return self.referenceView.bounds;
@@ -911,6 +883,7 @@
     for (UIGestureRecognizer* panner in self.panners) {
         [panner.view removeGestureRecognizer:panner];
     }
+    
     [self.panners removeAllObjects];
 }
 
@@ -918,79 +891,51 @@
 
 - (BOOL)checkDelegate:(SEL)selector animated:(BOOL)animated {
     BOOL ok = YES;
-    if (self.delegate && [self.delegate respondsToSelector:selector]) 
-        ok = ok & (BOOL)objc_msgSend(self.delegate, selector, self, animated);
-
-    for (UIViewController* controller in self.controllers) {
-        // check controller first
-        if ([controller respondsToSelector:selector]) 
-            ok = ok & (BOOL)objc_msgSend(controller, selector, self, animated);
-        // if that fails, check if it's a navigation controller and use the top controller
-        else if ([controller isKindOfClass:[UINavigationController class]]) {
-            UIViewController* topController = ((UINavigationController*)controller).topViewController;
-            if ([topController respondsToSelector:selector]) 
-                ok = ok & (BOOL)objc_msgSend(topController, selector, self, animated);
-        }
+    if (self.delegate && [self.delegate respondsToSelector:selector]) {
+        ok = ok && (BOOL)objc_msgSend(self.delegate, selector, self, animated);
     }
 
     return ok;
 }
 
 - (void)performDelegate:(SEL)selector animated:(BOOL)animated {
-    if (self.delegate && [self.delegate respondsToSelector:selector]) 
+    if (self.delegate && [self.delegate respondsToSelector:selector]) {
         objc_msgSend(self.delegate, selector, self, animated);
-
-    for (UIViewController* controller in self.controllers) {
-        // check controller first
-        if ([controller respondsToSelector:selector]) 
-            objc_msgSend(controller, selector, self, animated);
-        // if that fails, check if it's a navigation controller and use the top controller
-        else if ([controller isKindOfClass:[UINavigationController class]]) {
-            UIViewController* topController = ((UINavigationController*)controller).topViewController;
-            if ([topController respondsToSelector:selector]) 
-                objc_msgSend(topController, selector, self, animated);
-        }
     }
 }
 
 
 #pragma mark - Properties
-- (BOOL)isShowingLeftController
-{
+- (BOOL)isShowingLeftController {
     return self.slidingControllerView.frame.origin.x > 0;
 }
 
-- (BOOL)isShowingRightController
-{
+- (BOOL)isShowingRightController {
     return self.slidingControllerView.frame.origin.x < 0;
 }
 
-- (void)loadLeftControllerView
-{
+- (void)loadLeftControllerView {
     [self.referenceView insertSubview:self.leftController.view belowSubview:self.slidingControllerView];
     self.leftController.view.frame = self.referenceBounds;
     self.leftController.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
     self.leftController.view.hidden = YES;
 }
 
-- (void)loadRightControllerView
-{
+- (void)loadRightControllerView {
     [self.referenceView insertSubview:self.rightController.view belowSubview:self.slidingControllerView];
     self.rightController.view.frame = self.referenceBounds;
     self.rightController.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
     self.rightController.view.hidden = YES;
 }
 
-- (UIView *)centerControllerView
-{
+- (UIView *)centerControllerView {
     if (self.centerController.isViewLoaded) {
         return self.centerController.view;
     }
     
     return nil;
 }
-- (UIView *)leftControllerView
-{
+- (UIView *)leftControllerView {
     if (self.leftController.isViewLoaded) {
         return self.leftController.view;
     }
@@ -998,8 +943,7 @@
     return nil;
 }
 
-- (UIView *)rightControllerView
-{
+- (UIView *)rightControllerView {
     if (self.rightController.isViewLoaded) {
         return self.rightController.view;
     }
@@ -1242,7 +1186,7 @@
 #pragma mark - Shadow
 
 - (void)restoreShadowToSlidingView {
-    UIView* shadowedView = self.slidingControllerView;
+    UIView *shadowedView = self.slidingControllerView;
     if (!shadowedView) return;
 
     shadowedView.layer.shadowRadius = self.originalShadowRadius;
@@ -1253,7 +1197,7 @@
 }
 
 - (void)applyShadowToSlidingView {
-    UIView* shadowedView = self.slidingControllerView;
+    UIView *shadowedView = self.slidingControllerView;
     if (!shadowedView) return;
 
     self.originalShadowRadius = shadowedView.layer.shadowRadius;
@@ -1264,8 +1208,7 @@
 
     if ([self.delegate respondsToSelector:@selector(viewDeckController:applyShadow:withBounds:)]) {
         [self.delegate viewDeckController:self applyShadow:shadowedView.layer withBounds:self.referenceBounds];
-    }
-    else {
+    } else {
         shadowedView.layer.masksToBounds = NO;
         shadowedView.layer.shadowRadius = 10;
         shadowedView.layer.shadowOpacity = 1;
