@@ -59,9 +59,7 @@ typedef enum {
 #define IIViewDeckCenterHiddenIsInteractive(interactivity) ((interactivity) == IIViewDeckCenterHiddenUserInteractive)
 
 
-@interface IIViewDeckController : UIViewController {
-    BOOL _animating;
-}
+@interface IIViewDeckController : UIViewController
 
 @property(nonatomic, unsafe_unretained) id<IIViewDeckControllerDelegate> delegate;
 @property(nonatomic, strong) UIViewController *centerController;
@@ -130,5 +128,5 @@ typedef enum {
 
 
 @interface UIViewController(UIViewDeckItem)
-@property(nonatomic,readonly,retain) IIViewDeckController *viewDeckController; 
+@property(nonatomic, readonly, strong) IIViewDeckController *viewDeckController; 
 @end

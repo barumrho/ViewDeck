@@ -39,22 +39,17 @@
 - (void)setViewDeckController:(IIViewDeckController *)viewDeckController;
 @end
 
-@interface IIViewDeckController() <UIGestureRecognizerDelegate> {
-    CGFloat _panOrigin;
-    BOOL _viewAppeared;
-    CGFloat _preRotationWidth, _leftWidth, _rightWidth;
-}
-
-@property(nonatomic, retain) UIView *referenceView;
+@interface IIViewDeckController()<UIGestureRecognizerDelegate>
+@property(nonatomic, strong) UIView *referenceView;
 @property(nonatomic, readonly) CGRect referenceBounds;
-@property(nonatomic, retain) NSMutableArray *panners;
-@property(nonatomic, assign) CGFloat originalShadowRadius;
-@property(nonatomic, assign) CGFloat originalShadowOpacity;
-@property(nonatomic, retain) UIColor *originalShadowColor;
-@property(nonatomic, assign) CGSize originalShadowOffset;
-@property(nonatomic, retain) UIBezierPath *originalShadowPath;
-@property(nonatomic, retain) UIButton *centerTapper;
-@property(nonatomic, retain) UIView *centerView;
+@property(nonatomic, strong) NSMutableArray *panners;
+@property(nonatomic, unsafe_unretained) CGFloat originalShadowRadius;
+@property(nonatomic, unsafe_unretained) CGFloat originalShadowOpacity;
+@property(nonatomic, strong) UIColor *originalShadowColor;
+@property(nonatomic, unsafe_unretained) CGSize originalShadowOffset;
+@property(nonatomic, strong) UIBezierPath *originalShadowPath;
+@property(nonatomic, strong) UIButton *centerTapper;
+@property(nonatomic, strong) UIView *centerView;
 @property(nonatomic, readonly) UIView *slidingControllerView;
 
 // Use these methods to access views to access view properties
@@ -98,7 +93,12 @@
 @end 
 
 
-@implementation IIViewDeckController
+@implementation IIViewDeckController {
+    BOOL _animating;
+    BOOL _viewAppeared;
+    CGFloat _panOrigin;
+    CGFloat _preRotationWidth, _leftWidth, _rightWidth;
+}
 
 @synthesize panningMode = _panningMode;
 @synthesize panners = _panners;
