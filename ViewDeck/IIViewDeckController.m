@@ -23,33 +23,11 @@
 //  SOFTWARE.
 //
 
-// define some LLVM3 macros if the code is compiled with a different compiler (ie LLVMGCC42)
-#ifndef __has_feature
-#define __has_feature(x) 0
-#endif
-#ifndef __has_extension
-#define __has_extension __has_feature // Compatibility with pre-3.0 compilers.
-#endif
-
-#if __has_feature(objc_arc) && __clang_major__ >= 3
-#define II_ARC_ENABLED 1
-#endif // __has_feature(objc_arc)
-
-#if II_ARC_ENABLED
-#define II_RETAIN(xx)  ((void)(0))
-#define II_RELEASE(xx)  ((void)(0))
-#define II_AUTORELEASE(xx)  (xx)
-#else
-#define II_RETAIN(xx)           [xx retain]
-#define II_RELEASE(xx)          [xx release]
-#define II_AUTORELEASE(xx)      [xx autorelease]
-#endif
-
+#import <objc/runtime.h>
+#import <objc/message.h>
+#import <QuartzCore/QuartzCore.h>
 
 #import "IIViewDeckController.h"
-#import <objc/runtime.h>
-#import <QuartzCore/QuartzCore.h>
-#import <objc/message.h>
 
 #define DURATION_FAST 0.3
 #define DURATION_SLOW 0.3
@@ -57,7 +35,11 @@
 #define OPEN_SLIDE_DURATION(animated) SLIDE_DURATION(animated,DURATION_FAST)
 #define CLOSE_SLIDE_DURATION(animated) SLIDE_DURATION(animated,DURATION_SLOW)
 
-@interface IIViewDeckController () <UIGestureRecognizerDelegate> {
+@interface UIViewController(UIViewDeckItem_Internal)
+- (void)setViewDeckController:(IIViewDeckController *)viewDeckController;
+@end
+
+@interface IIViewDeckController() <UIGestureRecognizerDelegate> {
     CGFloat _panOrigin;
     BOOL _viewAppeared;
     CGFloat _preRotationWidth, _leftWidth, _rightWidth;
@@ -115,14 +97,6 @@
 - (BOOL)mustRelayAppearance;
 
 @end 
-
-
-@interface UIViewController (UIViewDeckItem_Internal) 
-
-// internal setter for the viewDeckController property on UIViewController
-- (void)setViewDeckController:(IIViewDeckController*)viewDeckController;
-
-@end
 
 
 @implementation IIViewDeckController
@@ -211,7 +185,7 @@
     self.originalShadowOffset = CGSizeZero;
     self.originalShadowPath = nil;
     
-    II_RELEASE(_slidingController), _slidingController = nil;
+    _slidingController = nil;
     self.referenceView = nil;
     self.centerView = nil;
     self.centerTapper = nil;
@@ -227,10 +201,6 @@
     self.rightController.viewDeckController = nil;
     self.rightController = nil;
     self.panners = nil;
-
-#if !II_ARC_ENABLED
-    [super dealloc];
-#endif
 }
 
 #pragma mark - Memory management
@@ -311,12 +281,12 @@
 - (void)loadView
 {
     _viewAppeared = NO;
-    self.view = II_AUTORELEASE([[UIView alloc] init]);
+    self.view = [[UIView alloc] init];
     self.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
     self.view.autoresizesSubviews = YES;
     self.view.clipsToBounds = YES;
     
-    self.centerView = II_AUTORELEASE([[UIView alloc] init]);
+    self.centerView = [[UIView alloc] init];
     self.centerView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
     self.centerView.autoresizesSubviews = YES;
     self.centerView.clipsToBounds = YES;
@@ -890,7 +860,7 @@
 - (void)addPanner:(UIView*)view {
     if (!view) return;
     
-    UIPanGestureRecognizer* panner = II_AUTORELEASE([[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(panned:)]);
+    UIPanGestureRecognizer *panner = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(panned:)];
     panner.cancelsTouchesInView = YES;
     panner.delegate = self;
     [view addGestureRecognizer:panner];
@@ -1062,12 +1032,10 @@
 
 - (void)setPanningView:(UIView *)panningView {
     if (_panningView != panningView) {
-        II_RELEASE(_panningView);
         _panningView = panningView;
-        II_RETAIN(_panningView);
-      
-        if (_viewAppeared && _panningMode == IIViewDeckPanningViewPanning)
-          [self addPanners];
+        if (_viewAppeared && _panningMode == IIViewDeckPanningViewPanning) {
+            [self addPanners];
+        }
     }
 }
 
@@ -1119,9 +1087,7 @@
     }
 
     _leftController.viewDeckController = nil;
-    II_RELEASE(_leftController);
     _leftController = leftController;
-    II_RETAIN(_leftController);
     _leftController.viewDeckController = self;
 }
 
@@ -1131,12 +1097,10 @@
     [centerController setViewDeckController:self];
     if (!_viewAppeared) {
         _centerController.viewDeckController = nil;
-        II_RELEASE(_centerController);
         [_centerController removeObserver:self forKeyPath:@"title"];
         _centerController = centerController;
         [_centerController addObserver:self forKeyPath:@"title" options:0 context:nil];
         _centerController.viewDeckController = self;
-        II_RETAIN(_centerController);
         return;
     }
 
@@ -1152,7 +1116,6 @@
         _centerController.viewDeckController = nil;
         [_centerController removeObserver:self forKeyPath:@"title"];
         if (self.mustRelayAppearance) [_centerController viewDidDisappear:NO];
-        II_RELEASE(_centerController);
         _centerController = nil;
     }
     
@@ -1170,7 +1133,6 @@
         }
 
         _centerController = centerController;
-        II_RETAIN(_centerController);
         [_centerController addObserver:self forKeyPath:@"title" options:0 context:nil];
         _centerController.viewDeckController = self;
         [self setSlidingAndReferenceViews];
@@ -1231,9 +1193,7 @@
     }
 
     _rightController.viewDeckController = nil;
-    II_RELEASE(_rightController);
     _rightController = rightController;
-    II_RETAIN(_rightController);
     _rightController.viewDeckController = self;
 }
 
