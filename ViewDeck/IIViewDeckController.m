@@ -87,7 +87,6 @@
 - (BOOL)checkDelegate:(SEL)selector animated:(BOOL)animated;
 - (void)performDelegate:(SEL)selector animated:(BOOL)animated;
 
-- (void)relayAppearanceMethod:(void(^)(UIViewController *controller))relay;
 - (BOOL)mustRelayAppearance;
 
 @end 
@@ -288,25 +287,17 @@
     else
         [self centerViewHidden];
    
-    [self relayAppearanceMethod:^(UIViewController *controller) {
-        [controller viewWillAppear:animated];
-    }];
+    [self.centerController viewWillAppear:animated];
 }
 
 - (void)viewDidAppear:(BOOL)animated {
     [super viewDidAppear:animated];
-    
-    [self relayAppearanceMethod:^(UIViewController *controller) {
-        [controller viewDidAppear:animated];
-    }];
+    [self.centerController viewDidAppear:animated];
 }
 
 - (void)viewWillDisappear:(BOOL)animated {
     [super viewWillDisappear:animated];
-    
-    [self relayAppearanceMethod:^(UIViewController *controller) {
-        [controller viewWillDisappear:animated];
-    }];
+    [self.centerController viewWillDisappear:animated];
 
     [self removePanners];
     
@@ -316,12 +307,8 @@
 
 - (void)viewDidDisappear:(BOOL)animated {
     [super viewDidDisappear:animated];
-
     [self.view removeObserver:self forKeyPath:@"bounds"];
-
-    [self relayAppearanceMethod:^(UIViewController *controller) {
-        [controller viewDidDisappear:animated];
-    }];
+    [self.centerController viewDidDisappear:animated];
 }
 
 #pragma mark - rotation
@@ -668,11 +655,6 @@
     }];
 }
 
-#pragma mark - Pre iOS5 message relaying
-
-- (void)relayAppearanceMethod:(void(^)(UIViewController *controller))relay {
-    relay(self.centerController);
-}
 
 #pragma mark - center view hidden stuff
 
