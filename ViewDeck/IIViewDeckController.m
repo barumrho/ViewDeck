@@ -103,7 +103,6 @@
 @synthesize panningMode = _panningMode;
 @synthesize panners = _panners;
 @synthesize referenceView = _referenceView;
-@synthesize slidingController = _slidingController;
 @synthesize centerController = _centerController;
 @synthesize leftController = _leftController;
 @synthesize rightController = _rightController;
@@ -134,22 +133,13 @@
         _panningMode = IIViewDeckFullViewPanning;
         _navigationControllerBehavior = IIViewDeckNavigationControllerContained;
         _centerhiddenInteractivity = IIViewDeckCenterHiddenUserInteractive;
-        _rotationBehavior = IIViewDeckRotationKeepsLedgeSizes;
+        self.rotationBehavior = IIViewDeckRotationKeepsLedgeSizes;
         _viewAppeared = NO;
         _resizesCenterView = NO;
         self.panners = [NSMutableArray array];
         self.enabled = YES;
 
-        self.originalShadowRadius = 0;
-        self.originalShadowOffset = CGSizeZero;
-        self.originalShadowColor = nil;
-        self.originalShadowOpacity = 0;
-        self.originalShadowPath = nil;
-
-        _slidingController = nil;
         self.centerController = centerController;
-        self.leftController = nil;
-        self.rightController = nil;
         self.leftLedge = 44;
         self.rightLedge = 44;
     }
@@ -158,13 +148,6 @@
 }
 
 - (void)cleanup {
-    self.originalShadowRadius = 0;
-    self.originalShadowOpacity = 0;
-    self.originalShadowColor = nil;
-    self.originalShadowOffset = CGSizeZero;
-    self.originalShadowPath = nil;
-    
-    _slidingController = nil;
     self.referenceView = nil;
     self.centerView = nil;
     self.centerTapper = nil;
@@ -221,8 +204,7 @@
             [UIView animateWithDuration:CLOSE_SLIDE_DURATION(YES) animations:^{
                 self.slidingControllerView.frame = [self slidingRectForOffset:self.referenceBounds.size.width - leftLedge];
             }];
-        }
-        else if (leftLedge > _leftLedge) {
+        } else if (leftLedge > _leftLedge) {
             [UIView animateWithDuration:OPEN_SLIDE_DURATION(YES) animations:^{
                 self.slidingControllerView.frame = [self slidingRectForOffset:self.referenceBounds.size.width - leftLedge];
             }];
@@ -238,8 +220,7 @@
             [UIView animateWithDuration:CLOSE_SLIDE_DURATION(YES) animations:^{
                 self.slidingControllerView.frame = [self slidingRectForOffset:rightLedge - self.referenceBounds.size.width];
             }];
-        }
-        else if (rightLedge > _rightLedge) {
+        } else if (rightLedge > _rightLedge) {
             [UIView animateWithDuration:OPEN_SLIDE_DURATION(YES) animations:^{
                 self.slidingControllerView.frame = [self slidingRectForOffset:rightLedge - self.referenceBounds.size.width];
             }];
@@ -250,8 +231,7 @@
 
 #pragma mark - View lifecycle
 
-- (void)loadView
-{
+- (void)loadView {
     _viewAppeared = NO;
     self.view = [[UIView alloc] init];
     self.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
@@ -263,8 +243,6 @@
     self.centerView.autoresizesSubviews = YES;
     self.centerView.clipsToBounds = YES;
     [self.view addSubview:self.centerView];
-    
-    [self.centerControllerView removeFromSuperview];
     [self.centerView addSubview:self.centerController.view];
 }
 
@@ -278,13 +256,10 @@
     self.originalShadowPath = nil;
 }
 
-- (void)viewDidUnload
-{
+- (void)viewDidUnload {
     [self cleanup];
     [super viewDidUnload];
 }
-
-
 
 - (void)viewWillAppear:(BOOL)animated {
     [super viewWillAppear:animated];
@@ -302,9 +277,9 @@
         
         [self applyShadowToSlidingView];
         _viewAppeared = YES;
-    }
-    else 
+    } else {
         [self arrangeViewsAfterRotation];
+    }
     
     [self addPanners];
 
@@ -351,10 +326,13 @@
 
 #pragma mark - rotation
 
-- (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation
-{
+- (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation {
     _preRotationWidth = self.referenceBounds.size.width;
-        
+    
+    if (self.rotationBehavior == IIViewDeckRotationKeepsViewSizes) {
+        self.centerView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    }
+
     if (self.rotationBehavior == IIViewDeckRotationKeepsViewSizes) {
         if (self.leftController.isViewLoaded) {
             _leftWidth = self.leftController.view.frame.size.width;
@@ -366,8 +344,9 @@
     }
     
     BOOL should = YES;
-    if (self.centerController)
+    if (self.centerController) {
         should = [self.centerController shouldAutorotateToInterfaceOrientation:interfaceOrientation];
+    }
 
     return should;
 }
@@ -408,17 +387,15 @@
     if (self.rotationBehavior == IIViewDeckRotationKeepsLedgeSizes) {
         if (offset > 0) {
             offset = self.referenceBounds.size.width - _preRotationWidth + offset;
-        }
-        else if (offset < 0) {
+        } else if (offset < 0) {
             offset = offset + _preRotationWidth - self.referenceBounds.size.width;
         }
-    }
-    else {
+        self.slidingControllerView.frame = [self slidingRectForOffset:offset];
+        self.centerController.view.frame = self.referenceBounds;
+    } else {
         self.leftLedge = self.leftLedge + self.referenceBounds.size.width - _preRotationWidth; 
         self.rightLedge = self.rightLedge + self.referenceBounds.size.width - _preRotationWidth; 
     }
-    self.slidingControllerView.frame = [self slidingRectForOffset:offset];
-    self.centerController.view.frame = self.referenceBounds;
     
     _preRotationWidth = 0;
 }
@@ -1016,10 +993,7 @@
             if (self.isShowingLeftController) {
                 [_leftController viewWillAppear:NO];
             }
-            if (self.slidingController)
-                [self.referenceView insertSubview:leftController.view belowSubview:self.slidingControllerView];
-            else
-                [self.referenceView addSubview:leftController.view];
+            [self.referenceView insertSubview:leftController.view belowSubview:self.slidingControllerView];
             leftController.view.hidden = self.slidingControllerView.frame.origin.x <= 0;
             leftController.view.frame = self.referenceBounds;
             leftController.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
@@ -1122,10 +1096,7 @@
             if (self.isShowingRightController) {
                 [_rightController viewWillAppear:NO];
             }
-            if (self.slidingController) 
-                [self.referenceView insertSubview:rightController.view belowSubview:self.slidingControllerView];
-            else
-                [self.referenceView addSubview:rightController.view];
+            [self.referenceView insertSubview:rightController.view belowSubview:self.slidingControllerView];
             rightController.view.hidden = self.slidingControllerView.frame.origin.x >= 0;
             rightController.view.frame = self.referenceBounds;
             rightController.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
@@ -1142,20 +1113,19 @@
 }
 
 - (void)setSlidingAndReferenceViews {
-    if (self.navigationController && self.navigationControllerBehavior == IIViewDeckNavigationControllerIntegrated) {
-        _slidingController = self.navigationController;
+    if (self.navigationControllerBehavior == IIViewDeckNavigationControllerIntegrated) {
+        NSAssert(!!self.navigationController, @"ViewDeckController must be inside a UINavigationController");
         self.referenceView = [self.navigationController.view superview];
     } else {
-        _slidingController = self.centerController;
         self.referenceView = self.view;
     }
 }
 
-- (UIView*)slidingControllerView {
-    if (self.navigationController && self.navigationControllerBehavior == IIViewDeckNavigationControllerIntegrated) {
-        return self.slidingController.view;
-    }
-    else {
+- (UIView *)slidingControllerView {
+    if (self.navigationControllerBehavior == IIViewDeckNavigationControllerIntegrated) {
+        NSAssert(!!self.navigationController, @"ViewDeckController must be inside a UINavigationController");
+        return self.navigationController.view;
+    } else {
         return self.centerView;
     }
 }

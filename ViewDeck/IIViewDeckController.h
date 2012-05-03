@@ -67,7 +67,6 @@ typedef enum {
 @property(nonatomic, strong) UIViewController *centerController;
 @property(nonatomic, strong) UIViewController *leftController;
 @property(nonatomic, strong) UIViewController *rightController;
-@property(nonatomic, readonly, strong) UIViewController *slidingController;
 @property(nonatomic, strong) UIView *panningView;
 @property(nonatomic, getter=isEnabled) BOOL enabled;
 @property(nonatomic) BOOL elastic;
