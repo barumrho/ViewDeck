@@ -45,36 +45,36 @@
     CGFloat _preRotationWidth, _leftWidth, _rightWidth;
 }
 
-@property (nonatomic, retain) UIView* referenceView;
-@property (nonatomic, readonly) CGRect referenceBounds;
-@property (nonatomic, retain) NSMutableArray* panners;
-@property (nonatomic, assign) CGFloat originalShadowRadius;
-@property (nonatomic, assign) CGFloat originalShadowOpacity;
-@property (nonatomic, retain) UIColor* originalShadowColor;
-@property (nonatomic, assign) CGSize originalShadowOffset;
-@property (nonatomic, retain) UIBezierPath* originalShadowPath;
-@property (nonatomic, retain) UIButton* centerTapper;
-@property (nonatomic, retain) UIView* centerView;
-@property (nonatomic, readonly) UIView* slidingControllerView;
+@property(nonatomic, retain) UIView *referenceView;
+@property(nonatomic, readonly) CGRect referenceBounds;
+@property(nonatomic, retain) NSMutableArray *panners;
+@property(nonatomic, assign) CGFloat originalShadowRadius;
+@property(nonatomic, assign) CGFloat originalShadowOpacity;
+@property(nonatomic, retain) UIColor *originalShadowColor;
+@property(nonatomic, assign) CGSize originalShadowOffset;
+@property(nonatomic, retain) UIBezierPath *originalShadowPath;
+@property(nonatomic, retain) UIButton *centerTapper;
+@property(nonatomic, retain) UIView *centerView;
+@property(nonatomic, readonly) UIView *slidingControllerView;
 
 // Use these methods to access views to access view properties
 // Accessing them through controller.view will load them when it's not necessary
-@property (nonatomic, readonly) UIView *centerControllerView;
-@property (nonatomic, readonly) UIView *leftControllerView;
-@property (nonatomic, readonly) UIView *rightControllerView;
+@property(nonatomic, readonly) UIView *centerControllerView;
+@property(nonatomic, readonly) UIView *leftControllerView;
+@property(nonatomic, readonly) UIView *rightControllerView;
 
-@property (nonatomic, readonly) BOOL isShowingLeftController;
-@property (nonatomic, readonly) BOOL isShowingRightController;
+@property(nonatomic, readonly) BOOL isShowingLeftController;
+@property(nonatomic, readonly) BOOL isShowingRightController;
 
 - (void)loadLeftControllerView;
 - (void)loadRightControllerView;
 
 - (void)cleanup;
 
-- (BOOL)closeLeftViewAnimated:(BOOL)animated options:(UIViewAnimationOptions)options completion:(void(^)(IIViewDeckController* controller))completed;
-- (void)openLeftViewAnimated:(BOOL)animated options:(UIViewAnimationOptions)options completion:(void(^)(IIViewDeckController* controller))completed;
-- (BOOL)closeRightViewAnimated:(BOOL)animated options:(UIViewAnimationOptions)options completion:(void(^)(IIViewDeckController* controller))completed;
-- (void)openRightViewAnimated:(BOOL)animated options:(UIViewAnimationOptions)options completion:(void(^)(IIViewDeckController* controller))completed;
+- (BOOL)closeLeftViewAnimated:(BOOL)animated options:(UIViewAnimationOptions)options completion:(void(^)(IIViewDeckController *controller))completed;
+- (void)openLeftViewAnimated:(BOOL)animated options:(UIViewAnimationOptions)options completion:(void(^)(IIViewDeckController *controller))completed;
+- (BOOL)closeRightViewAnimated:(BOOL)animated options:(UIViewAnimationOptions)options completion:(void(^)(IIViewDeckController *controller))completed;
+- (void)openRightViewAnimated:(BOOL)animated options:(UIViewAnimationOptions)options completion:(void(^)(IIViewDeckController *controller))completed;
 
 - (CGRect)slidingRectForOffset:(CGFloat)offset;
 - (CGSize)slidingSizeForOffset:(CGFloat)offset;
@@ -93,7 +93,7 @@
 - (BOOL)checkDelegate:(SEL)selector animated:(BOOL)animated;
 - (void)performDelegate:(SEL)selector animated:(BOOL)animated;
 
-- (void)relayAppearanceMethod:(void(^)(UIViewController* controller))relay;
+- (void)relayAppearanceMethod:(void(^)(UIViewController *controller))relay;
 - (BOOL)mustRelayAppearance;
 
 @end 
@@ -441,7 +441,7 @@
     [self showCenterView:animated completion:nil];
 }
 
-- (void)showCenterView:(BOOL)animated  completion:(void(^)(IIViewDeckController* controller))completed {
+- (void)showCenterView:(BOOL)animated  completion:(void(^)(IIViewDeckController *controller))completed {
     if (!self.leftController.view.hidden) 
         [self closeLeftViewAnimated:animated completion:completed];
     if (!self.rightController.view.hidden) 
@@ -535,11 +535,11 @@
     return YES;
 }
 
-- (void)closeLeftViewBouncing:(void(^)(IIViewDeckController* controller))bounced {
+- (void)closeLeftViewBouncing:(void(^)(IIViewDeckController *controller))bounced {
     [self closeLeftViewBouncing:bounced completion:nil];
 }
 
-- (void)closeLeftViewBouncing:(void(^)(IIViewDeckController* controller))bounced completion:(void (^)(IIViewDeckController *))completed {
+- (void)closeLeftViewBouncing:(void(^)(IIViewDeckController *controller))bounced completion:(void (^)(IIViewDeckController *))completed {
     if (self.leftControllerIsClosed) return;
     
     // check the delegate to allow closing
@@ -658,11 +658,11 @@
     return YES;
 }
 
-- (void)closeRightViewBouncing:(void(^)(IIViewDeckController* controller))bounced {
+- (void)closeRightViewBouncing:(void(^)(IIViewDeckController *controller))bounced {
     [self closeRightViewBouncing:bounced completion:nil];
 }
 
-- (void)closeRightViewBouncing:(void(^)(IIViewDeckController* controller))bounced completion:(void (^)(IIViewDeckController *))completed {
+- (void)closeRightViewBouncing:(void(^)(IIViewDeckController *controller))bounced completion:(void (^)(IIViewDeckController *))completed {
     if (self.rightControllerIsClosed) return;
     
     // check the delegate to allow closing
@@ -693,7 +693,7 @@
 
 #pragma mark - Pre iOS5 message relaying
 
-- (void)relayAppearanceMethod:(void(^)(UIViewController* controller))relay {
+- (void)relayAppearanceMethod:(void(^)(UIViewController *controller))relay {
     relay(self.centerController);
 }
 
@@ -880,7 +880,7 @@
 
 
 - (void)removePanners {
-    for (UIGestureRecognizer* panner in self.panners) {
+    for (UIGestureRecognizer *panner in self.panners) {
         [panner.view removeGestureRecognizer:panner];
     }
     
@@ -891,7 +891,7 @@
 
 - (BOOL)checkDelegate:(SEL)selector animated:(BOOL)animated {
     BOOL ok = YES;
-    if (self.delegate && [self.delegate respondsToSelector:selector]) {
+    if ([self.delegate respondsToSelector:selector]) {
         ok = ok && (BOOL)objc_msgSend(self.delegate, selector, self, animated);
     }
 
@@ -899,7 +899,7 @@
 }
 
 - (void)performDelegate:(SEL)selector animated:(BOOL)animated {
-    if (self.delegate && [self.delegate respondsToSelector:selector]) {
+    if ([self.delegate respondsToSelector:selector]) {
         objc_msgSend(self.delegate, selector, self, animated);
     }
 }
@@ -1067,7 +1067,7 @@
         if (centerController == self.leftController) self.leftController = nil;
         if (centerController == self.rightController) self.rightController = nil;
 
-        UINavigationController* navController = [centerController isKindOfClass:[UINavigationController class]] 
+        UINavigationController *navController = [centerController isKindOfClass:[UINavigationController class]] 
             ? (UINavigationController*)centerController 
             : nil;
         BOOL barHidden = NO;
@@ -1145,8 +1145,7 @@
     if (self.navigationController && self.navigationControllerBehavior == IIViewDeckNavigationControllerIntegrated) {
         _slidingController = self.navigationController;
         self.referenceView = [self.navigationController.view superview];
-    }
-    else {
+    } else {
         _slidingController = self.centerController;
         self.referenceView = self.view;
     }
@@ -1173,7 +1172,7 @@
         CGFloat offset = self.slidingControllerView.frame.origin.x;
         self.slidingControllerView.frame = [self slidingRectForOffset:offset];
         self.slidingControllerView.layer.shadowPath = [UIBezierPath bezierPathWithRect:self.referenceBounds].CGPath;
-        UINavigationController* navController = [self.centerController isKindOfClass:[UINavigationController class]] 
+        UINavigationController *navController = [self.centerController isKindOfClass:[UINavigationController class]] 
             ? (UINavigationController*)self.centerController 
             : nil;
         if (navController != nil && !navController.navigationBarHidden) {
@@ -1226,7 +1225,7 @@
 
 @dynamic viewDeckController;
 
-static char* viewDeckControllerKey = "ViewDeckController";
+static char *viewDeckControllerKey = "ViewDeckController";
 
 - (IIViewDeckController*)viewDeckController {
     id result = objc_getAssociatedObject(self, viewDeckControllerKey);
