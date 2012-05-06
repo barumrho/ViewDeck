@@ -915,7 +915,6 @@
 }
 
 - (void)setTitle:(NSString *)title {
-    [super setTitle:title];
     self.centerController.title = title;
 }
 
@@ -993,9 +992,7 @@
     [centerController setViewDeckController:self];
     if (!_viewAppeared) {
         _centerController.viewDeckController = nil;
-        [_centerController removeObserver:self forKeyPath:@"title"];
         _centerController = centerController;
-        [_centerController addObserver:self forKeyPath:@"title" options:0 context:nil];
         _centerController.viewDeckController = self;
         return;
     }
@@ -1010,7 +1007,6 @@
         if (self.mustRelayAppearance) [_centerController viewWillDisappear:NO];
         [_centerController.view removeFromSuperview];
         _centerController.viewDeckController = nil;
-        [_centerController removeObserver:self forKeyPath:@"title"];
         if (self.mustRelayAppearance) [_centerController viewDidDisappear:NO];
         _centerController = nil;
     }
@@ -1029,7 +1025,6 @@
         }
 
         _centerController = centerController;
-        [_centerController addObserver:self forKeyPath:@"title" options:0 context:nil];
         _centerController.viewDeckController = self;
 
         centerController.view.frame = currentFrame;
@@ -1111,11 +1106,7 @@
 #pragma mark - observation
 
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context {
-    if ([@"title" isEqualToString:keyPath]) {
-        if (![[super title] isEqualToString:self.centerController.title]) {
-            self.title = self.centerController.title;
-        }
-    } else if ([keyPath isEqualToString:@"bounds"]) {
+    if ([keyPath isEqualToString:@"bounds"]) {
         CGFloat offset = self.slidingControllerView.frame.origin.x;
         self.slidingControllerView.frame = [self slidingRectForOffset:offset];
         self.slidingControllerView.layer.shadowPath = [UIBezierPath bezierPathWithRect:self.referenceBounds].CGPath;
