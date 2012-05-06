@@ -88,7 +88,6 @@
 - (void)performDelegate:(SEL)selector animated:(BOOL)animated;
 
 - (BOOL)mustRelayAppearance;
-
 @end 
 
 
@@ -292,11 +291,13 @@
 - (void)viewDidAppear:(BOOL)animated {
     [super viewDidAppear:animated];
     [self.centerController viewDidAppear:animated];
+    [self.view setNeedsLayout];
 }
 
 - (void)viewWillDisappear:(BOOL)animated {
     [super viewWillDisappear:animated];
     [self.centerController viewWillDisappear:animated];
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
 
     [self removePanners];
     
