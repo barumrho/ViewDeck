@@ -96,6 +96,13 @@
     BOOL _viewAppeared;
     CGFloat _panOrigin;
     CGFloat _preRotationWidth, _leftWidth, _rightWidth;
+    
+    BOOL _isCenterControllerDelegate;
+    BOOL _isLeftControllerDelegate;
+    BOOL _isRightControllerDelegate;
+    
+    BOOL _shouldOpenLeft;
+    BOOL _shouldOpenRight;
 }
 
 @synthesize panningMode = _panningMode;
@@ -711,7 +718,7 @@
     return self.enabled;
 }
 
-- (void)panned:(UIPanGestureRecognizer*)panner {
+- (void)panned:(UIPanGestureRecognizer *)panner {
     if (!_enabled) return;
     
     CGPoint pan = [panner translationInView:self.referenceView];
@@ -723,10 +730,19 @@
     if ([panner state] == UIGestureRecognizerStateBegan) {
         [self loadLeftControllerView];
         [self loadRightControllerView];
+        
+        _shouldOpenLeft = [self checkDelegate:@selector(viewDeckControllerWillOpenLeftView:animated:) animated:NO];
+        _shouldOpenRight = [self checkDelegate:@selector(viewDeckControllerWillOpenRightView:animated:) animated:NO];
+    }
+    
+    if (x > 0 && !_shouldOpenLeft) {
+        x = 0;
+    } else if (x < 0 && !_shouldOpenRight) {
+        x = 0;
     }
 
     CGFloat w = self.referenceBounds.size.width;
-    CGFloat lx = MAX(MIN(x, w - self.leftLedge), - w + self.rightLedge);
+    CGFloat lx = MAX(MIN(x, w - self.leftLedge), -w + self.rightLedge);
 
     if (self.elastic) {
         CGFloat dx = ABS(x) - ABS(lx);
@@ -739,20 +755,11 @@
     }
 
     self.slidingControllerView.frame = [self slidingRectForOffset:x];
-
     self.rightController.view.hidden = x >= 0;
     self.leftController.view.hidden = x <= 0;
     
     if ([self.delegate respondsToSelector:@selector(viewDeckController:didPanToOffset:)]) {
         [self.delegate viewDeckController:self didPanToOffset:x];
-    }
-
-    if (panner.state == UIGestureRecognizerStateBegan) {
-        if (x > 0) {
-//            [self checkDelegate:@selector(viewDeckControllerWillOpenLeftView:animated:) animated:NO];
-        } else if (x < 0) {
-//            [self checkDelegate:@selector(viewDeckControllerWillOpenRightView:animated:) animated:NO];
-        }
     }
     
     if (panner.state == UIGestureRecognizerStateEnded) {
@@ -763,26 +770,25 @@
             // small velocity, no movement
             if (x >= w - self.leftLedge - lw3) {
                 [self openLeftViewAnimated:YES options:UIViewAnimationOptionCurveEaseOut completion:nil];
-            }
-            else if (x <= self.rightLedge + rw3 - w) {
+            } else if (x <= self.rightLedge + rw3 - w) {
                 [self openRightViewAnimated:YES options:UIViewAnimationOptionCurveEaseOut completion:nil];
-            }
-            else
+            } else {
                 [self showCenterView:YES];
-        }
-        else if (velocity < 0) {
+            }
+        } else if (velocity < 0) {
             // swipe to the left
-            if (x < 0) 
+            if (x < 0) {
                 [self openRightViewAnimated:YES options:UIViewAnimationOptionCurveEaseOut completion:nil];
-            else 
+            } else {
                 [self showCenterView:YES];
-        }
-        else if (velocity > 0) {
+            }
+        } else if (velocity > 0) {
             // swipe to the right
-            if (x > 0) 
+            if (x > 0) {
                 [self openLeftViewAnimated:YES options:UIViewAnimationOptionCurveEaseOut completion:nil];
-            else 
+            } else {
                 [self showCenterView:YES];
+            }
         }
     }
 }
@@ -850,8 +856,18 @@
 
 - (BOOL)checkDelegate:(SEL)selector animated:(BOOL)animated {
     BOOL ok = YES;
+    
     if ([self.delegate respondsToSelector:selector]) {
         ok = ok && (BOOL)objc_msgSend(self.delegate, selector, self, animated);
+    }
+    if (_isLeftControllerDelegate && [self.leftController respondsToSelector:selector]) {
+        ok = ok && (BOOL)objc_msgSend(self.leftController, selector, self, animated);
+    }
+    if (_isRightControllerDelegate && [self.rightController respondsToSelector:selector]) {
+        ok = ok && (BOOL)objc_msgSend(self.rightController, selector, self, animated);
+    }
+    if (_isCenterControllerDelegate && [self.centerController respondsToSelector:selector]) {
+        ok = ok && (BOOL)objc_msgSend(self.centerController, selector, self, animated);
     }
 
     return ok;
@@ -860,6 +876,15 @@
 - (void)performDelegate:(SEL)selector animated:(BOOL)animated {
     if ([self.delegate respondsToSelector:selector]) {
         objc_msgSend(self.delegate, selector, self, animated);
+    }
+    if (_isLeftControllerDelegate && [self.leftController respondsToSelector:selector]) {
+        objc_msgSend(self.leftController, selector, self, animated);
+    }
+    if (_isRightControllerDelegate && [self.rightController respondsToSelector:selector]) {
+        objc_msgSend(self.rightController, selector, self, animated);
+    }
+    if (_isCenterControllerDelegate && [self.centerController respondsToSelector:selector]) {
+        objc_msgSend(self.centerController, selector, self, animated);
     }
 }
 
@@ -984,16 +1009,17 @@
     _leftController.viewDeckController = nil;
     _leftController = leftController;
     _leftController.viewDeckController = self;
+    _isLeftControllerDelegate = [_leftController conformsToProtocol:@protocol(IIViewDeckControllerDelegate)];
 }
 
 
 
 - (void)setCenterController:(UIViewController *)centerController {
-    [centerController setViewDeckController:self];
     if (!_viewAppeared) {
         _centerController.viewDeckController = nil;
         _centerController = centerController;
         _centerController.viewDeckController = self;
+        _isCenterControllerDelegate = [_centerController conformsToProtocol:@protocol(IIViewDeckControllerDelegate)];
         return;
     }
 
@@ -1041,9 +1067,8 @@
         [self applyShadowToSlidingView];
         if (self.mustRelayAppearance) [self.centerController viewDidAppear:NO];
     }
-    else {
-        _centerController = nil;
-    }
+    
+    _isCenterControllerDelegate = [_centerController conformsToProtocol:@protocol(IIViewDeckControllerDelegate)];
 }
 
 - (void)setRightController:(UIViewController *)rightController {
@@ -1083,6 +1108,7 @@
     _rightController.viewDeckController = nil;
     _rightController = rightController;
     _rightController.viewDeckController = self;
+    _isRightControllerDelegate = [_rightController conformsToProtocol:@protocol(IIViewDeckControllerDelegate)];
 }
 
 - (void)setSlidingAndReferenceViews {
