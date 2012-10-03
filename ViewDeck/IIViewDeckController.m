@@ -113,6 +113,8 @@
 @synthesize rightController = _rightController;
 @synthesize leftLedge = _leftLedge;
 @synthesize rightLedge = _rightLedge;
+@synthesize leftSideViewSize = _leftSideViewSize;
+@synthesize rightSideViewSize = _rightSideViewSize;
 @synthesize resizesCenterView = _resizesCenterView;
 @synthesize originalShadowOpacity = _originalShadowOpacity;
 @synthesize originalShadowPath = _originalShadowPath;
@@ -214,6 +216,11 @@
             }];
         }
     }
+
+    if (!self.leftSideViewSize) {
+        self.leftSideViewSize = self.referenceBounds.size.width - leftLedge;
+    }
+
     _leftLedge = leftLedge;
 }
 
@@ -230,6 +237,11 @@
             }];
         }
     }
+
+    if (!self.rightSideViewSize) {
+        self.rightSideViewSize = self.referenceBounds.size.width - rightLedge;
+    }
+
     _rightLedge = rightLedge;
 }
 
@@ -307,7 +319,7 @@
     [[NSNotificationCenter defaultCenter] removeObserver:self];
 
     [self removePanners];
-    
+
     [self closeLeftView];
     [self closeRightView];
 }
@@ -319,6 +331,13 @@
 }
 
 #pragma mark - rotation
+- (NSUInteger)supportedInterfaceOrientations {
+    if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad) {
+        return UIInterfaceOrientationMaskAll;
+    } else {
+        return UIInterfaceOrientationMaskPortrait;
+    }
+}
 
 - (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation {
     _preRotationWidth = self.referenceBounds.size.width;
@@ -387,8 +406,8 @@
         self.slidingControllerView.frame = [self slidingRectForOffset:offset];
         self.centerController.view.frame = self.referenceBounds;
     } else {
-        self.leftLedge = self.leftLedge + self.referenceBounds.size.width - _preRotationWidth; 
-        self.rightLedge = self.rightLedge + self.referenceBounds.size.width - _preRotationWidth; 
+        self.leftLedge = self.referenceBounds.size.width - self.leftSideViewSize;
+        self.rightLedge = self.referenceBounds.size.width - self.rightSideViewSize;
     }
     
     _preRotationWidth = 0;
@@ -465,7 +484,11 @@
     [UIView animateWithDuration:OPEN_SLIDE_DURATION(animated) delay:0 options:options | UIViewAnimationOptionLayoutSubviews | UIViewAnimationOptionBeginFromCurrentState animations:^{
         _animating = YES;
         self.leftController.view.hidden = NO;
-        self.slidingControllerView.frame = [self slidingRectForOffset:self.referenceBounds.size.width - self.leftLedge];
+        if (self.rotationBehavior == IIViewDeckRotationKeepsViewSizes) {
+            self.slidingControllerView.frame = [self slidingRectForOffset:self.leftSideViewSize];
+        } else {
+            self.slidingControllerView.frame = [self slidingRectForOffset:self.referenceBounds.size.width - self.leftLedge];
+        }
         [self centerViewHidden];
     } completion:^(BOOL finished) {
         [self.leftController viewDidAppear:YES];
@@ -588,7 +611,11 @@
     [UIView animateWithDuration:OPEN_SLIDE_DURATION(animated) delay:0 options:options | UIViewAnimationOptionLayoutSubviews animations:^{
         _animating = YES;
         self.rightController.view.hidden = NO;
-        self.slidingControllerView.frame = [self slidingRectForOffset:self.rightLedge - self.referenceBounds.size.width];
+        if (self.rotationBehavior == IIViewDeckRotationKeepsViewSizes) {
+            self.slidingControllerView.frame = [self slidingRectForOffset:-self.rightSideViewSize];
+        } else {
+            self.slidingControllerView.frame = [self slidingRectForOffset:self.rightLedge - self.referenceBounds.size.width];
+        }
         [self centerViewHidden];
     } completion:^(BOOL finished) {
         [self.rightController viewDidAppear:YES];
